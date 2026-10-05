@@ -1,0 +1,208 @@
+@import "tailwindcss";
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
+
+/*
+  Tintes del tejido cusqueño
+  - grana cochinilla: barra principal y la única acción «siguiente paso» de cada pantalla
+  - chilca (verde): confirmado, válido, asistió
+  - q'olle (amarillo): pendiente, por vencer
+  - añil (azul): lista de espera, información
+  - bermellón: solo errores
+  Radios: controles 8px, paneles 12px, insignias redondas.
+*/
+@theme {
+  --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, "SFMono-Regular", monospace;
+
+  --color-fondo: #f4f5f8;
+  --color-superficie: #ffffff;
+  --color-hundido: #eceef3;
+  --color-tinta: #161a2e;
+  --color-tinta-2: #40465f;
+  --color-tinta-3: #5f6584;
+  --color-linea: #e0e3ea;
+  --color-linea-fuerte: #c6cad6;
+
+  --color-grana: #9d1748;
+  --color-grana-hover: #87123d;
+  --color-grana-oscura: #6e0e31;
+  --color-grana-clara: #f9e6ed;
+  --color-grana-tinta: #7e1239;
+
+  --color-chilca: #2c6a39;
+  --color-chilca-viva: #4b9658;
+  --color-chilca-clara: #e3f1e4;
+
+  --color-qolle: #e2a20a;
+  --color-qolle-tinta: #6f4c00;
+  --color-qolle-clara: #fcf1d1;
+
+  --color-anil: #2b3e8e;
+  --color-anil-viva: #5068c4;
+  --color-anil-clara: #e4e9f8;
+
+  --color-error: #b3261e;
+  --color-error-clara: #fce9e7;
+
+  --color-crudo: #dfe2e9;
+
+  --ease-salida: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-movimiento: cubic-bezier(0.77, 0, 0.175, 1);
+
+  --shadow-panel: 0 1px 2px rgb(22 26 46 / 0.05), 0 4px 12px -4px rgb(22 26 46 / 0.08);
+  --shadow-flotante: 0 12px 32px -8px rgb(22 26 46 / 0.22), 0 2px 6px rgb(22 26 46 / 0.08);
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+    scrollbar-color: var(--color-linea-fuerte) transparent;
+  }
+  body {
+    background: var(--color-fondo);
+    color: var(--color-tinta);
+    font-family: var(--font-sans);
+    font-feature-settings: "ss01", "cv11";
+    caret-color: var(--color-grana);
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection {
+    background: var(--color-grana-clara);
+    color: var(--color-grana-oscura);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-grana);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  h1, h2, h3 {
+    text-wrap: balance;
+    letter-spacing: -0.022em;
+  }
+  p {
+    text-wrap: pretty;
+  }
+  a {
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1px;
+  }
+  table {
+    font-variant-numeric: tabular-nums;
+  }
+  input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    opacity: 0.6;
+    cursor: pointer;
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-linea-fuerte);
+    border-radius: 10px;
+    border: 2px solid var(--color-fondo);
+  }
+}
+
+@layer components {
+  /* Franja tejida bajo la barra principal: celdas de los cuatro tintes. */
+  .franja-tejida {
+    height: 4px;
+    background:
+      linear-gradient(90deg,
+        var(--color-qolle) 0 12px, var(--color-grana-oscura) 12px 16px,
+        var(--color-chilca-viva) 16px 28px, var(--color-grana-oscura) 28px 32px,
+        #f4f5f8 32px 44px, var(--color-grana-oscura) 44px 48px,
+        var(--color-anil-viva) 48px 60px, var(--color-grana-oscura) 60px 64px);
+    background-size: 64px 4px;
+  }
+
+  .num {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Botones: presión táctil breve (Emil: 0.97, 160ms, ease-out). */
+  .pulsable {
+    transition: transform 160ms var(--ease-salida), background-color 150ms ease, border-color 150ms ease,
+      color 150ms ease, box-shadow 150ms ease;
+  }
+  .pulsable:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+
+  /* Celdas de la banda de cupos: aparecen una tras otra al cargar. */
+  .celda {
+    transition: background-color 240ms ease, box-shadow 240ms ease;
+  }
+  .banda-anima .celda {
+    animation: tejer 420ms var(--ease-salida) both;
+    animation-delay: calc(var(--i, 0) * 14ms);
+  }
+  @keyframes tejer {
+    from {
+      opacity: 0;
+      transform: scaleY(0.4);
+    }
+  }
+
+  /* Entrada de paneles flotantes y avisos. */
+  .aparece {
+    animation: aparece 220ms var(--ease-salida) both;
+  }
+  @keyframes aparece {
+    from {
+      opacity: 0;
+      transform: translateY(6px) scale(0.985);
+    }
+  }
+  .esqueleto {
+    background: linear-gradient(90deg, var(--color-hundido) 0%, #f6f7fa 50%, var(--color-hundido) 100%);
+    background-size: 200% 100%;
+    animation: brillo 1.4s linear infinite;
+    border-radius: 6px;
+  }
+  @keyframes brillo {
+    to {
+      background-position: -200% 0;
+    }
+  }
+  /* Resultado de escaneo: un sello que se asienta. */
+  .estampa {
+    animation: estampa 320ms var(--ease-salida) both;
+  }
+  @keyframes estampa {
+    from {
+      opacity: 0;
+      transform: scale(1.04);
+      filter: blur(2px);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .banda-anima .celda,
+  .aparece,
+  .estampa {
+    animation: aparece-suave 160ms ease both;
+  }
+  @keyframes aparece-suave {
+    from {
+      opacity: 0;
+    }
+  }
+  .pulsable:active:not(:disabled) {
+    transform: none;
+  }
+  .esqueleto {
+    animation: none;
+  }
+}
+
+@media print {
+  .no-imprimir {
+    display: none !important;
+  }
+}

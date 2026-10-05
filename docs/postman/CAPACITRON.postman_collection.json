@@ -1,0 +1,1577 @@
+{
+  "info": {
+    "name": "CAPACITRON · API (Supabase RPC)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Peticiones para las evidencias de las tareas de API del CAP Sprint 1. Completa las variables url y apikey con los datos de Project Settings → API de Supabase (no subas la clave a Jira). Ejecuta las carpetas en orden: cada una guarda los tokens e IDs que usa la siguiente. La API sigue la convención de PostgREST: 200 = éxito y 400 = error de validación; el campo «hint» trae el código (CAMPOS, CORREO_EXISTE, PLAN, NO_AUTH...)."
+  },
+  "variable": [
+    {
+      "key": "url",
+      "value": "https://TU-PROYECTO.supabase.co"
+    },
+    {
+      "key": "apikey",
+      "value": ""
+    },
+    {
+      "key": "token_asistente",
+      "value": ""
+    },
+    {
+      "key": "token_organizador",
+      "value": ""
+    },
+    {
+      "key": "evento_id",
+      "value": ""
+    },
+    {
+      "key": "inscripcion_id",
+      "value": ""
+    },
+    {
+      "key": "pago_id",
+      "value": ""
+    },
+    {
+      "key": "codigo_certificado",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "0. Sesiones",
+      "item": [
+        {
+          "name": "Ingresar como organizador",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "try { const v = pm.response.json().token; if (v) pm.collectionVariables.set('token_organizador', v) } catch (e) {}",
+                  "pm.test('respuesta recibida', () => pm.expect(pm.response.code).to.be.oneOf([200, 400]))"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{apikey}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apikey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"p\": {\n    \"correo\": \"coordinacion@capacitron.demo\",\n    \"password\": \"<contraseña de demostración (ver README)>\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{url}}/rest/v1/rpc/iniciar_sesion",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "rpc",
+                "iniciar_sesion"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Ingresar como asistente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "try { const v = pm.response.json().token; if (v) pm.collectionVariables.set('token_asistente', v) } catch (e) {}",
+                  "pm.test('respuesta recibida', () => pm.expect(pm.response.code).to.be.oneOf([200, 400]))"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{apikey}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apikey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"p\": {\n    \"correo\": \"estudiante@capacitron.demo\",\n    \"password\": \"<contraseña de demostración (ver README)>\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{url}}/rest/v1/rpc/iniciar_sesion",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "rpc",
+                "iniciar_sesion"
+              ]
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "CAP-29 · Registro (HU-01)",
+      "item": [
+        {
+          "name": "Registro exitoso",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('respuesta recibida', () => pm.expect(pm.response.code).to.be.oneOf([200, 400]))"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{apikey}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apikey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"p\": {\n    \"nombres\": \"Ana\",\n    \"apellidos\": \"Prueba Postman\",\n    \"correo\": \"ana.postman@prueba.capacitron.demo\",\n    \"password\": \"Prueba2026x\",\n    \"rol\": \"asistente\",\n    \"acepta_privacidad\": true\n  }\n}"
+            },
+            "url": {
+              "raw": "{{url}}/rest/v1/rpc/registrar_usuario",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "rpc",
+                "registrar_usuario"
+              ]
+            },
+            "description": "Esperado: 200 {\"ok\": true}. La cuenta queda «pendiente de confirmación»."
+          }
+        },
+        {
+          "name": "Correo duplicado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('respuesta recibida', () => pm.expect(pm.response.code).to.be.oneOf([200, 400]))"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{apikey}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apikey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"p\": {\n    \"nombres\": \"Ana\",\n    \"apellidos\": \"Prueba Postman\",\n    \"correo\": \"ana.postman@prueba.capacitron.demo\",\n    \"password\": \"Prueba2026x\",\n    \"rol\": \"asistente\",\n    \"acepta_privacidad\": true\n  }\n}"
+            },
+            "url": {
+              "raw": "{{url}}/rest/v1/rpc/registrar_usuario",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "rpc",
+                "registrar_usuario"
+              ]
+            },
+            "description": "Esperado: 400 con hint CORREO_EXISTE."
+          }
+        },
+        {
+          "name": "Contraseña débil",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('respuesta recibida', () => pm.expect(pm.response.code).to.be.oneOf([200, 400]))"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{apikey}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apikey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"p\": {\n    \"nombres\": \"Beto\",\n    \"apellidos\": \"Prueba\",\n    \"correo\": \"beto.postman@prueba.capacitron.demo\",\n    \"password\": \"corta\",\n    \"acepta_privacidad\": true\n  }\n}"
+            },
+            "url": {
+              "raw": "{{url}}/rest/v1/rpc/registrar_usuario",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "rpc",
+                "registrar_usuario"
+              ]
+            },
+            "description": "Esperado: 400 con hint CAMPOS y details {\"campos\":[\"password\"]}."
+          }
+        },
+        {
+          "name": "Ver correo de confirmación (buzón demo)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('respuesta recibida', () => pm.expect(pm.response.code).to.be.oneOf([200, 400]))"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{apikey}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apikey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"p\": {\n    \"para\": \"ana.postman@prueba.capacitron.demo\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{url}}/rest/v1/rpc/correo_demo",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "rpc",
+                "correo_demo"
+              ]
+            },
+            "description": "Muestra el correo con el enlace /confirmar/<token> (válido 24 h)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "CAP-33 · Borrador, publicar y fechas (HU-02)",
+      "item": [
+        {
+          "name": "Guardar borrador",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "try { const v = pm.response.json().evento.id; if (v) pm.collectionVariables.set('evento_id', v) } catch (e) {}",
+                  "pm.test('respuesta recibida', () => pm.expect(pm.response.code).to.be.oneOf([200, 400]))"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{apikey}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apikey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"p\": {\n    \"token\": \"{{token_organizador}}\",\n    \"accion\": \"borrador\",\n    \"nombre\": \"Evento de prueba Postman\",\n    \"descripcion\": \"Prueba de API\",\n    \"fecha_inicio\": \"2026-12-01T15:00:00-05:00\",\n    \"fecha_fin\": \"2026-12-01T18:00:00-05:00\",\n    \"modalidad\": \"presencial\",\n    \"lugar\": \"Aula 1\",\n    \"cupo_maximo\": 1,\n    \"costo\": 0,\n    \"horas_academicas\": 3\n  }\n}"
+            },
+            "url": {
+              "raw": "{{url}}/rest/v1/rpc/guardar_evento",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "rpc",
+                "guardar_evento"
+              ]
+            },
+            "description": "Esperado: 200, evento.estado = \"borrador\" (no aparece en catalogo_eventos)."
+          }
+        },
+        {
+          "name": "Publicar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('respuesta recibida', () => pm.expect(pm.response.code).to.be.oneOf([200, 400]))"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{apikey}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apikey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"p\": {\n    \"token\": \"{{token_organizador}}\",\n    \"id\": \"{{evento_id}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{url}}/rest/v1/rpc/publicar_evento",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "rpc",
+                "publicar_evento"
+              ]
+            },
+            "description": "Esperado: 200, evento.estado = \"publicado\"."
+          }
+        },
+        {
+          "name": "Error: fin anterior al inicio",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('respuesta recibida', () => pm.expect(pm.response.code).to.be.oneOf([200, 400]))"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{apikey}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apikey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"p\": {\n    \"token\": \"{{token_organizador}}\",\n    \"accion\": \"borrador\",\n    \"nombre\": \"Fechas al revés\",\n    \"descripcion\": \"Prueba de API\",\n    \"fecha_inicio\": \"2026-12-01T18:00:00-05:00\",\n    \"fecha_fin\": \"2026-12-01T15:00:00-05:00\",\n    \"modalidad\": \"presencial\",\n    \"lugar\": \"Aula 1\",\n    \"cupo_maximo\": 10,\n    \"costo\": 0,\n    \"horas_academicas\": 3\n  }\n}"
+            },
+            "url": {
+              "raw": "{{url}}/rest/v1/rpc/guardar_evento",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "rpc",
+                "guardar_evento"
+              ]
+            },
+            "description": "Esperado: 400, «La fecha de fin debe ser posterior a la de inicio», campos [\"fecha_fin\"]."
+          }
+        },
+        {
+          "name": "Error: campos obligatorios",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('respuesta recibida', () => pm.expect(pm.response.code).to.be.oneOf([200, 400]))"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{apikey}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apikey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"p\": {\n    \"token\": \"{{token_organizador}}\",\n    \"nombre\": \"Sin datos\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{url}}/rest/v1/rpc/guardar_evento",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "rpc",
+                "guardar_evento"
+              ]
+            },
+            "description": "Esperado: 400 con la lista de campos faltantes."
+          }
+        },
+        {
+          "name": "Catálogo público",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('respuesta recibida', () => pm.expect(pm.response.code).to.be.oneOf([200, 400]))"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{apikey}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apikey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"p\": {}\n}"
+            },
+            "url": {
+              "raw": "{{url}}/rest/v1/rpc/catalogo_eventos",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "rpc",
+                "catalogo_eventos"
+              ]
+            },
+            "description": "El borrador no aparece; el publicado sí."
+          }
+        }
+      ]
+    },
+    {
+      "name": "CAP-37 / CAP-41 · Inscripción y cupos (HU-03, HU-05)",
+      "item": [
+        {
+          "name": "Inscripción exitosa",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "try { const v = pm.response.json().inscripcion.id; if (v) pm.collectionVariables.set('inscripcion_id', v) } catch (e) {}",
+                  "pm.test('respuesta recibida', () => pm.expect(pm.response.code).to.be.oneOf([200, 400]))"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{apikey}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apikey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"p\": {\n    \"token\": \"{{token_asistente}}\",\n    \"evento_id\": \"{{evento_id}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{url}}/rest/v1/rpc/inscribirse",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "rpc",
+                "inscribirse"
+              ]
+            },
+            "description": "Esperado: 200 ok=true, estado «confirmada». El evento tiene cupo 1: ahora cupos_disponibles = 0."
+          }
+        },
+        {
+          "name": "Doble inscripción rechazada",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('respuesta recibida', () => pm.expect(pm.response.code).to.be.oneOf([200, 400]))"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{apikey}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apikey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"p\": {\n    \"token\": \"{{token_asistente}}\",\n    \"evento_id\": \"{{evento_id}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{url}}/rest/v1/rpc/inscribirse",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "rpc",
+                "inscribirse"
+              ]
+            },
+            "description": "Esperado: 200 ok=false, motivo «ya_inscrito» con la inscripción existente."
+          }
+        },
+        {
+          "name": "Ingresar con otra cuenta",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "try { const v = pm.response.json().token; if (v) pm.collectionVariables.set('token_asistente', v) } catch (e) {}",
+                  "pm.test('respuesta recibida', () => pm.expect(pm.response.code).to.be.oneOf([200, 400]))"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{apikey}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apikey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"p\": {\n    \"correo\": \"paola.nina@capacitron.demo\",\n    \"password\": \"<contraseña de demostración (ver README)>\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{url}}/rest/v1/rpc/iniciar_sesion",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "rpc",
+                "iniciar_sesion"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Evento sin cupo: bloqueado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('respuesta recibida', () => pm.expect(pm.response.code).to.be.oneOf([200, 400]))"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{apikey}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apikey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"p\": {\n    \"token\": \"{{token_asistente}}\",\n    \"evento_id\": \"{{evento_id}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{url}}/rest/v1/rpc/inscribirse",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "rpc",
+                "inscribirse"
+              ]
+            },
+            "description": "Esperado: ok=false, motivo «sin_cupos» y oferta de lista de espera."
+          }
+        },
+        {
+          "name": "Unirse a la lista de espera",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('respuesta recibida', () => pm.expect(pm.response.code).to.be.oneOf([200, 400]))"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{apikey}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apikey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"p\": {\n    \"token\": \"{{token_asistente}}\",\n    \"evento_id\": \"{{evento_id}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{url}}/rest/v1/rpc/unirse_lista_espera",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "rpc",
+                "unirse_lista_espera"
+              ]
+            },
+            "description": "Esperado: ok=true y posición 1."
+          }
+        },
+        {
+          "name": "Cupos vistos por el organizador",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('respuesta recibida', () => pm.expect(pm.response.code).to.be.oneOf([200, 400]))"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{apikey}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apikey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"p\": {\n    \"token\": \"{{token_organizador}}\",\n    \"id\": \"{{evento_id}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{url}}/rest/v1/rpc/evento_gestion",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "rpc",
+                "evento_gestion"
+              ]
+            },
+            "description": "Bloque «cupos»: total, ocupados, disponibles y en_espera."
+          }
+        }
+      ]
+    },
+    {
+      "name": "CAP-44 · Pago (HU-04)",
+      "item": [
+        {
+          "name": "Ingresar como asistente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "try { const v = pm.response.json().token; if (v) pm.collectionVariables.set('token_asistente', v) } catch (e) {}",
+                  "pm.test('respuesta recibida', () => pm.expect(pm.response.code).to.be.oneOf([200, 400]))"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{apikey}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apikey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"p\": {\n    \"correo\": \"estudiante@capacitron.demo\",\n    \"password\": \"<contraseña de demostración (ver README)>\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{url}}/rest/v1/rpc/iniciar_sesion",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "rpc",
+                "iniciar_sesion"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Inscribirse en el curso de pago",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "try { const v = pm.response.json().inscripcion.id; if (v) pm.collectionVariables.set('inscripcion_id', v) } catch (e) {}",
+                  "pm.test('respuesta recibida', () => pm.expect(pm.response.code).to.be.oneOf([200, 400]))"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{apikey}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apikey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"p\": {\n    \"token\": \"{{token_asistente}}\",\n    \"evento_id\": \"<id del «Curso: Desarrollo web con React y Supabase» (ver catalogo_eventos)>\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{url}}/rest/v1/rpc/inscribirse",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "rpc",
+                "inscribirse"
+              ]
+            },
+            "description": "Esperado: estado «pendiente_pago» con reserva de 30 minutos."
+          }
+        },
+        {
+          "name": "Iniciar pago (Yape)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "try { const v = pm.response.json().pago.id; if (v) pm.collectionVariables.set('pago_id', v) } catch (e) {}",
+                  "pm.test('respuesta recibida', () => pm.expect(pm.response.code).to.be.oneOf([200, 400]))"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{apikey}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apikey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"p\": {\n    \"token\": \"{{token_asistente}}\",\n    \"inscripcion_id\": \"{{inscripcion_id}}\",\n    \"metodo\": \"yape\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{url}}/rest/v1/rpc/iniciar_pago",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "rpc",
+                "iniciar_pago"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Pago rechazado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('respuesta recibida', () => pm.expect(pm.response.code).to.be.oneOf([200, 400]))"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{apikey}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apikey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"p\": {\n    \"token\": \"{{token_asistente}}\",\n    \"pago_id\": \"{{pago_id}}\",\n    \"resultado\": \"rechazado\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{url}}/rest/v1/rpc/respuesta_pasarela",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "rpc",
+                "respuesta_pasarela"
+              ]
+            },
+            "description": "Esperado: ok=false, motivo «rechazado»; la inscripción sigue pendiente."
+          }
+        },
+        {
+          "name": "Reintentar (PayPal)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "try { const v = pm.response.json().pago.id; if (v) pm.collectionVariables.set('pago_id', v) } catch (e) {}",
+                  "pm.test('respuesta recibida', () => pm.expect(pm.response.code).to.be.oneOf([200, 400]))"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{apikey}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apikey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"p\": {\n    \"token\": \"{{token_asistente}}\",\n    \"inscripcion_id\": \"{{inscripcion_id}}\",\n    \"metodo\": \"paypal\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{url}}/rest/v1/rpc/iniciar_pago",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "rpc",
+                "iniciar_pago"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Pago aprobado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('respuesta recibida', () => pm.expect(pm.response.code).to.be.oneOf([200, 400]))"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{apikey}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apikey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"p\": {\n    \"token\": \"{{token_asistente}}\",\n    \"pago_id\": \"{{pago_id}}\",\n    \"resultado\": \"aprobado\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{url}}/rest/v1/rpc/respuesta_pasarela",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "rpc",
+                "respuesta_pasarela"
+              ]
+            },
+            "description": "Esperado: ok=true y número de comprobante CP-AAAA-NNNNNN."
+          }
+        },
+        {
+          "name": "Comprobante",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('respuesta recibida', () => pm.expect(pm.response.code).to.be.oneOf([200, 400]))"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{apikey}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apikey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"p\": {\n    \"token\": \"{{token_asistente}}\",\n    \"pago_id\": \"{{pago_id}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{url}}/rest/v1/rpc/comprobante_pago",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "rpc",
+                "comprobante_pago"
+              ]
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "CAP-51 · Regla de asistencia mínima (HU-08)",
+      "item": [
+        {
+          "name": "Mis inscripciones (copiar id del taller terminado)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('respuesta recibida', () => pm.expect(pm.response.code).to.be.oneOf([200, 400]))"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{apikey}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apikey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"p\": {\n    \"token\": \"{{token_asistente}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{url}}/rest/v1/rpc/mis_inscripciones",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "rpc",
+                "mis_inscripciones"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Certificado de quien cumplió",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "try { const v = pm.response.json().certificado.codigo; if (v) pm.collectionVariables.set('codigo_certificado', v) } catch (e) {}",
+                  "pm.test('respuesta recibida', () => pm.expect(pm.response.code).to.be.oneOf([200, 400]))"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{apikey}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apikey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"p\": {\n    \"token\": \"{{token_asistente}}\",\n    \"inscripcion_id\": \"<id de la inscripción al «Taller de Ingeniería de Requisitos»>\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{url}}/rest/v1/rpc/mi_certificado",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "rpc",
+                "mi_certificado"
+              ]
+            },
+            "description": "Esperado: elegible=true con los datos del certificado."
+          }
+        },
+        {
+          "name": "Ingresar con quien no cumplió",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "try { const v = pm.response.json().token; if (v) pm.collectionVariables.set('token_asistente', v) } catch (e) {}",
+                  "pm.test('respuesta recibida', () => pm.expect(pm.response.code).to.be.oneOf([200, 400]))"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{apikey}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apikey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"p\": {\n    \"correo\": \"daniela.huarca@capacitron.demo\",\n    \"password\": \"<contraseña de demostración (ver README)>\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{url}}/rest/v1/rpc/iniciar_sesion",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "rpc",
+                "iniciar_sesion"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Certificado rechazado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('respuesta recibida', () => pm.expect(pm.response.code).to.be.oneOf([200, 400]))"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{apikey}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apikey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"p\": {\n    \"token\": \"{{token_asistente}}\",\n    \"inscripcion_id\": \"<id de su inscripción al taller>\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{url}}/rest/v1/rpc/mi_certificado",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "rpc",
+                "mi_certificado"
+              ]
+            },
+            "description": "Esperado: elegible=false, «asististe a 1 de 2 jornadas (50 %)…»."
+          }
+        }
+      ]
+    },
+    {
+      "name": "CAP-54 · Verificación pública (HU-09)",
+      "item": [
+        {
+          "name": "Código válido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('respuesta recibida', () => pm.expect(pm.response.code).to.be.oneOf([200, 400]))"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{apikey}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apikey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"p\": {\n    \"codigo\": \"{{codigo_certificado}}\",\n    \"solicitante\": \"postman\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{url}}/rest/v1/rpc/verificar_certificado",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "rpc",
+                "verificar_certificado"
+              ]
+            },
+            "description": "Sin sesión. Esperado: estado «valido», titular y evento."
+          }
+        },
+        {
+          "name": "Código inexistente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('respuesta recibida', () => pm.expect(pm.response.code).to.be.oneOf([200, 400]))"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{apikey}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apikey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"p\": {\n    \"codigo\": \"CAP-ZZZZ-ZZZZ-ZZZZ\",\n    \"solicitante\": \"postman\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{url}}/rest/v1/rpc/verificar_certificado",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "rpc",
+                "verificar_certificado"
+              ]
+            },
+            "description": "Esperado: estado «no_encontrado». Ejecútala 5 veces."
+          }
+        },
+        {
+          "name": "Bloqueo tras exceder intentos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('respuesta recibida', () => pm.expect(pm.response.code).to.be.oneOf([200, 400]))"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{apikey}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apikey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"p\": {\n    \"codigo\": \"CAP-ZZZZ-ZZZZ-YYYY\",\n    \"solicitante\": \"postman\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{url}}/rest/v1/rpc/verificar_certificado",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "rpc",
+                "verificar_certificado"
+              ]
+            },
+            "description": "Tras 5 códigos inexistentes en 10 minutos. Esperado: estado «bloqueado» por 15 minutos."
+          }
+        }
+      ]
+    }
+  ]
+}
