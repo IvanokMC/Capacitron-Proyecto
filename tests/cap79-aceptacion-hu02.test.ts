@@ -39,7 +39,9 @@ async function formulario(extra: Record<string, unknown> = {}) {
     fecha_inicio: hora(96), fecha_fin: hora(99), modalidad: 'presencial', lugar: 'Auditorio de Derecho, Ciudad Universitaria',
     cupo_maximo: 80, costo: 0, horas_academicas: 3,
     tipo: 'seminario', organizador_nombre: 'Vicerrectorado de Investigación', contacto: 'investigacion@unsaac.test',
-    contacto_consentimiento: true, ...extra,
+    contacto_consentimiento: true,
+    // Punto en el mapa: lo exige publicar un evento presencial desde CAP-104 (HU-19). Antes, la API lo ignora.
+    latitud: -13.5208, longitud: -71.9584, ...extra,
   }
 }
 const guardar = async (extra: Record<string, unknown> = {}) =>
