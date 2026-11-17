@@ -55,7 +55,9 @@ export const REGLAS: Record<Bucket, ReglasArchivo> = {
 
 const MB = 1024 * 1024
 // Coma decimal, como en los textos de la ficha de diseño (CAP-93): «3,1 MB».
-const mb = (bytes: number) => (bytes / MB).toFixed(1).replace('.', ',')
+// Se redondea hacia arriba (H-01 de CAP-96): con 2 MB + 1 byte, «2,0 MB» se leía como si cumpliera el límite.
+// El 1e-9 absorbe el error de coma flotante (3,1 MB exactos no deben mostrarse como 3,2).
+const mb = (bytes: number) => (Math.ceil((bytes * 10) / MB - 1e-9) / 10).toFixed(1).replace('.', ',')
 
 /** Devuelve el motivo por el que el archivo no se acepta, o null si cumple las reglas. Textos de la ficha CAP-93. */
 export function validarArchivo(archivo: Pick<Blob, 'type' | 'size'>, reglas: ReglasArchivo): string | null {

@@ -47,6 +47,13 @@ describe('CAP-97 reglas de archivo (HU-17 CA-01 y CA-02)', () => {
     expect(validarArchivo({ type: 'image/png', size: 3.1 * 1024 * 1024 }, REGLAS.fotos)).toBe('La foto pesa 3,1 MB y el límite es 2 MB.')
   })
 
+  it('un archivo apenas mayor a 2 MB no dice «2,0 MB»: el peso se redondea hacia arriba (H-01 de CAP-96)', () => {
+    const MB = 1024 * 1024
+    expect(validarArchivo({ type: 'image/png', size: 2 * MB + 1 }, REGLAS.fotos)).toBe('La foto pesa 2,1 MB y el límite es 2 MB.')
+    expect(validarArchivo({ type: 'image/png', size: 2 * MB }, REGLAS.fotos)).toBeNull()
+    expect(validarArchivo({ type: 'image/png', size: 3 * MB }, REGLAS.fotos)).toBe('La foto pesa 3,0 MB y el límite es 2 MB.')
+  })
+
   it('la ruta va en la carpeta de la persona, con el formato de capa.foto_valida, y nunca se repite', () => {
     const a = rutaNueva(USUARIO, 'image/webp', REGLAS.fotos)
     const b = rutaNueva(USUARIO, 'image/webp', REGLAS.fotos)
