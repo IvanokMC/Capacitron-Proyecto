@@ -77,6 +77,9 @@ export function relativo(v: string | Date, ahora: Date) {
   return diff > 0 ? `en ${txt}` : `hace ${txt}`
 }
 
+/** CAP-98: celular en grupos de tres para leerlo mejor («984 123 456»). Si no tiene 9 dígitos, se deja como está. */
+export const celular = (c: string) => (/^\d{9}$/.test(c) ? `${c.slice(0, 3)} ${c.slice(3, 6)} ${c.slice(6)}` : c)
+
 export function iniciales(nombre: string) {
   return nombre
     .replace(/^(Dra?\.|Mg\.|Ing\.|Lic\.)\s*/i, '')
