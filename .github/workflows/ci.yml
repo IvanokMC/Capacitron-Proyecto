@@ -1,0 +1,26 @@
+# CI de CAPACITRON (CAP-92 · George, DevOps). Corre en cada push y en cada pull request hacia main:
+# tipos (tsc) y todas las pruebas (vitest con PGlite, sin servicios externos ni secretos).
+# Teoría: refactorizar con pruebas (diap. 140): ningún PR se integra sin que la suite pase.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  pruebas:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Tipos
+        run: npx tsc --noEmit
+      - name: Pruebas
+        run: npm test
