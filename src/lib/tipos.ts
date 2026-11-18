@@ -107,6 +107,24 @@ export interface SesionPrograma {
   ponentes: { id: string; nombre: string }[]
 }
 
+/**
+ * CAP-80 (Carlos): parámetros que acepta `catalogo_eventos`; todos son opcionales y se combinan (HU-15).
+ * Es el contrato entre la base de datos y los filtros del catálogo (CAP-81): DIP, diap. 92–106.
+ */
+export interface FiltrosCatalogo {
+  q?: string
+  modalidad?: Modalidad | ''
+  precio?: 'gratis' | 'pago' | ''
+  incluir_pasados?: boolean
+  tipo?: NonNullable<Evento['tipo']> | ''
+  /** Fecha AAAA-MM-DD (hora de Lima); el evento debe iniciar ese día o después. */
+  desde?: string
+  /** Fecha AAAA-MM-DD (hora de Lima); el evento debe iniciar ese día o antes. */
+  hasta?: string
+  /** Parte del lugar, por ejemplo «Perayoc». */
+  ubicacion?: string
+}
+
 export interface EventoDetalle extends Evento {
   es_organizador: boolean
   es_ponente: boolean
