@@ -15,6 +15,7 @@ const MIGRACIONES = [
   '20261117000001_campos_publicos_evento.sql', // CAP-78 (José): campos públicos y contacto
   '20261118000001_busqueda_catalogo.sql', // CAP-80 (Carlos): búsqueda del catálogo
   '20261119000001_celular_usuario.sql', // CAP-99 (Carlos): celular con consentimiento
+  '20261120000001_coordenadas_evento.sql', // CAP-104 (Carlos): latitud y longitud
 ].map((f) => readFileSync(new URL(`../supabase/migrations/${f}`, import.meta.url), 'utf8'))
 
 export class ErrorRpc extends Error {
@@ -98,6 +99,8 @@ export async function nuevaBd({ demo = false } = {}) {
       horas_academicas: 3,
       // CAP-77: datos que exige publicar (CA-07); cada prueba puede reemplazarlos en `extra`
       tipo: 'taller', organizador_nombre: 'Organización de prueba', contacto: 'eventos@test.pe',
+      // CAP-104: publicar un evento presencial o mixto exige el punto en el mapa (HU-19 CA-01).
+      latitud: -13.5208, longitud: -71.9584,
       accion, ...resto,
     })
     return r.evento as any
