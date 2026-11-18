@@ -58,7 +58,8 @@ const fmtNum = new Intl.NumberFormat('es-PE')
 export const num = (n: number) => fmtNum.format(n)
 
 export const MODALIDAD: Record<string, string> = { presencial: 'Presencial', virtual: 'Virtual', mixta: 'Mixta' }
-export const METODO: Record<string, string> = { yape: 'Yape', plin: 'Plin', paypal: 'PayPal' }
+// CAP-90 (José, HU-16): nombres de los medios de pago manuales (transferencia y WhatsApp).
+export const METODO: Record<string, string> = { yape: 'Yape', plin: 'Plin', paypal: 'PayPal', transferencia: 'Transferencia', whatsapp: 'WhatsApp' }
 export const PLATAFORMA: Record<string, string> = { zoom: 'Zoom', meet: 'Google Meet', teams: 'Microsoft Teams' }
 export const ROL: Record<string, string> = {
   asistente: 'Asistente', organizador: 'Organizador', ponente: 'Ponente', admin: 'Administración',

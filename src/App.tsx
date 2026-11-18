@@ -11,6 +11,8 @@ import { Ingresar, Registro, Confirmar } from './pages/Cuenta'
 import { Verificar } from './pages/Verificar'
 
 const MisInscripciones = lazy(() => import('./pages/MisInscripciones'))
+// CAP-90 (José): pantalla de pago real (HU-16), separada de la lista de inscripciones.
+const PagarInscripcion = lazy(() => import('./pages/PagarInscripcion'))
 const Encuesta = lazy(() => import('./pages/Encuesta'))
 const Bandeja = lazy(() => import('./pages/Bandeja'))
 const CorreoDemo = lazy(() => import('./pages/CorreoDemo'))
@@ -83,6 +85,7 @@ export function App() {
             <Route path="/verificar/:codigo" element={<Verificar />} />
             <Route path="/correo-demo" element={<CorreoDemo />} />
             <Route path="/mis-inscripciones" element={<Requiere><MisInscripciones /></Requiere>} />
+            <Route path="/mis-inscripciones/:id/pagar" element={<Requiere><PagarInscripcion /></Requiere>} />
             <Route path="/encuestas/:id" element={<Requiere><Encuesta /></Requiere>} />
             <Route path="/bandeja" element={<Requiere><Bandeja /></Requiere>} />
             <Route path="/perfil" element={<Requiere><Perfil /></Requiere>} />

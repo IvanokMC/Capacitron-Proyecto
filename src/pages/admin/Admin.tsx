@@ -9,14 +9,17 @@ import {
   AreaTexto, Aviso, Boton, Campo, CargandoLista, Casilla, Cifra, Dialogo, EncabezadoPagina, Entrada, Insignia, Panel, Pestanas, Selector, Vacio,
 } from '../../components/ui'
 import { useNotas } from '../../components/notificaciones'
+// CAP-90 (José): pestaña «Pagos» de la HU-16, en su propio archivo (SRP).
+import { PagosAdmin } from './Pagos'
 
-type Tab = 'resumen' | 'instituciones' | 'usuarios' | 'planes' | 'historial' | 'sistema'
+type Tab = 'resumen' | 'pagos' | 'instituciones' | 'usuarios' | 'planes' | 'historial' | 'sistema'
 
 export default function Admin() {
   const [params, setParams] = useSearchParams()
   const tab = (params.get('pestana') as Tab) || 'resumen'
   const opciones: { valor: Tab; texto: string }[] = [
     { valor: 'resumen', texto: 'Resumen' },
+    { valor: 'pagos', texto: 'Pagos' },
     { valor: 'instituciones', texto: 'Instituciones' },
     { valor: 'usuarios', texto: 'Usuarios' },
     { valor: 'planes', texto: 'Planes' },
@@ -29,6 +32,7 @@ export default function Admin() {
       <Pestanas etiqueta="Administración" valor={tab} onCambio={(t) => setParams(t === 'resumen' ? {} : { pestana: t }, { replace: true })} opciones={opciones} />
       <div className="mt-6">
         {tab === 'resumen' && <Resumen />}
+        {tab === 'pagos' && <PagosAdmin />}
         {tab === 'instituciones' && <Instituciones />}
         {tab === 'usuarios' && <Usuarios />}
         {tab === 'planes' && <Planes />}
