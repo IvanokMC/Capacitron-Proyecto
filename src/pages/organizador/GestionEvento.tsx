@@ -6,10 +6,11 @@ import type { Evento, Plan } from '../../lib/tipos'
 import { fechaHora, MODALIDAD, num, precio, rangoEvento, relativo, soles } from '../../lib/formato'
 import { BandaCupos, InsigniaFase, InsigniaInscripcion, Jornadas } from '../../components/tejido'
 import {
-  AreaTexto, Aviso, Boton, BotonEnlace, Campo, CargandoLista, Cifra, Dialogo, Insignia, Panel, Pestanas, Vacio,
+  AreaTexto, Aviso, Boton, BotonEnlace, Campo, CargandoLista, CeldaCelular, Cifra, Dialogo, Insignia, Panel, Pestanas, Vacio,
 } from '../../components/ui'
 import { useNotas } from '../../components/notificaciones'
 import { AvatarUsuario } from '../../components/AvatarUsuario'
+import { enlaceWhatsapp } from '../../lib/celular'
 import { Programa } from './gestion/Programa'
 import { Asistencia } from './gestion/Asistencia'
 import { Certificados } from './gestion/Certificados'
@@ -20,7 +21,10 @@ export interface Gestion extends Evento {
   enlace_virtual: string | null
   tiene_inscripciones: boolean
   cupos: { total: number; ocupados: number; disponibles: number; confirmados: number; pendientes_pago: number; ofrecidos: number; en_espera: number }
-  inscritos: { id: string; nombre: string; correo: string; foto_url: string | null; estado: 'confirmada' | 'pendiente_pago' | 'cancelada' | 'expirada'; creado_en: string; monto: number
+  inscritos: { id: string; nombre: string; correo: string; foto_url: string | null
+    /** CAP-99: solo llega si la persona dio su consentimiento y su inscripción está activa. */
+    celular: string | null
+    estado: 'confirmada' | 'pendiente_pago' | 'cancelada' | 'expirada'; creado_en: string; monto: number
     reserva_expira_en: string | null; pago: string | null; jornadas_asistidas: number; total_jornadas: number }[]
   lista_espera: { id: string; nombre: string; correo: string; estado: 'esperando' | 'ofrecido'; solicitado_en: string; oferta_expira_en: string | null }[]
   plan: Plan
@@ -180,12 +184,12 @@ function Resumen({ e }: { e: Gestion }) {
             {e.estado === 'borrador' ? 'Publica el evento para empezar a recibir inscripciones.' : 'Las inscripciones aparecerán aquí en tiempo real.'}
           </Vacio></Panel>
         ) : (
-          <TablaInscritos filas={vigentes} />
+          <TablaInscritos filas={vigentes} evento={e.nombre} />
         )}
         {otros.length > 0 && (
           <details className="mt-3 text-sm">
             <summary className="cursor-pointer text-tinta-3 hover:text-tinta">Canceladas o vencidas ({otros.length})</summary>
-            <div className="mt-3"><TablaInscritos filas={otros} /></div>
+            <div className="mt-3"><TablaInscritos filas={otros} evento={e.nombre} /></div>
           </details>
         )}
       </section>
@@ -220,13 +224,14 @@ function Resumen({ e }: { e: Gestion }) {
   )
 }
 
-function TablaInscritos({ filas }: { filas: Gestion['inscritos'] }) {
+export function TablaInscritos({ filas, evento }: { filas: Gestion['inscritos']; evento: string }) {
   return (
     <div className="overflow-x-auto rounded-xl border border-linea bg-superficie">
-      <table className="w-full min-w-[640px] text-sm">
+      <table className="w-full min-w-[820px] text-sm">
         <thead className="border-b border-linea bg-fondo/60 text-left text-[13px] text-tinta-3">
           <tr>
             <th className="px-4 py-2.5 font-medium">Persona</th>
+            <th className="px-4 py-2.5 font-medium">Celular</th>
             <th className="px-4 py-2.5 font-medium">Estado</th>
             <th className="px-4 py-2.5 font-medium">Asistencia</th>
             <th className="px-4 py-2.5 font-medium">Inscripción</th>
@@ -241,6 +246,10 @@ function TablaInscritos({ filas }: { filas: Gestion['inscritos'] }) {
                   <AvatarUsuario nombre={i.nombre} ruta={i.foto_url} tamano="size-8" />
                   <div className="min-w-0"><p className="font-medium">{i.nombre}</p><p className="text-[13px] text-tinta-3">{i.correo}</p></div>
                 </div>
+              </td>
+              {/* CAP-100: HU-18 CA-02 y CA-05, número y WhatsApp solo con consentimiento; si no, «No compartido» */}
+              <td className="px-4 py-3">
+                <CeldaCelular celular={i.celular} nombre={i.nombre} enlaceWhatsapp={i.celular ? enlaceWhatsapp(i.celular, i.nombre, evento) : null} />
               </td>
               <td className="px-4 py-3"><InsigniaInscripcion estado={i.estado} /></td>
               <td className="px-4 py-3"><Jornadas asistidas={i.jornadas_asistidas} total={i.total_jornadas} /></td>

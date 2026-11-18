@@ -35,11 +35,15 @@ export interface CamposPublicacion {
   lugar: string
   organizador_nombre: string
   contacto: string
+  /** CAP-105: si el formulario ya tiene el punto en el mapa. Sin dato (undefined), no se revisa. */
+  tienePunto?: boolean
 }
 
-export const MENSAJES_PUBLICACION: Record<keyof Omit<CamposPublicacion, 'modalidad'>, string> = {
+export const MENSAJES_PUBLICACION: Record<'tipo' | 'lugar' | 'ubicacion' | 'organizador_nombre' | 'contacto', string> = {
   tipo: 'Elige el tipo de evento.',
   lugar: 'Indica el lugar del evento presencial o mixto.',
+  // CAP-105 (HU-19 CA-01): misma regla que la API (CAP-104, campo «ubicacion»).
+  ubicacion: 'Marca el lugar en el mapa: busca la dirección o toca el mapa.',
   organizador_nombre: 'Escribe quién organiza el evento.',
   contacto: 'Indica un correo o teléfono de contacto.',
 }
@@ -49,6 +53,7 @@ export function faltantesParaPublicar(f: CamposPublicacion): Record<string, stri
   const faltan: Record<string, string> = {}
   if (!f.tipo.trim()) faltan.tipo = MENSAJES_PUBLICACION.tipo
   if (f.modalidad !== 'virtual' && !f.lugar.trim()) faltan.lugar = MENSAJES_PUBLICACION.lugar
+  if (f.modalidad !== 'virtual' && f.tienePunto === false) faltan.ubicacion = MENSAJES_PUBLICACION.ubicacion
   if (!f.organizador_nombre.trim()) faltan.organizador_nombre = MENSAJES_PUBLICACION.organizador_nombre
   if (!f.contacto.trim()) faltan.contacto = MENSAJES_PUBLICACION.contacto
   return faltan

@@ -225,6 +225,28 @@ export function Insignia({ tinte = 'neutro', children, punto = true, className }
 // Avisos en línea
 // ---------------------------------------------------------------------------
 
+/**
+ * CAP-81 (Medaly): ficha de un filtro activo que se quita con su propia «x» (HU-15, CA-03).
+ * Abstracción (diap. 13–16): no sabe de catálogos; recibe el texto y qué hacer al quitarla, así sirve
+ * para cualquier lista filtrable. El botón dice en voz alta qué quita («Quitar filtro: Taller»), porque
+ * una «x» sola no se entiende con lector de pantalla.
+ */
+export function FichaQuitable({ children, onQuitar, etiqueta }: { children: ReactNode; onQuitar: () => void; etiqueta: string }) {
+  return (
+    <span className="inline-flex h-8 items-center gap-1 rounded-full border border-linea-fuerte bg-superficie pl-3 pr-1 text-[13px] text-tinta-2">
+      <span className="max-w-[22ch] truncate">{children}</span>
+      <button
+        type="button"
+        onClick={onQuitar}
+        aria-label={`Quitar filtro: ${etiqueta}`}
+        className="grid size-6 place-items-center rounded-full text-tinta-3 transition-colors hover:bg-hundido hover:text-tinta"
+      >
+        <X className="size-3.5" weight="bold" />
+      </button>
+    </span>
+  )
+}
+
 export function Aviso({ tipo = 'info', titulo, children, accion, className }: {
   tipo?: 'info' | 'exito' | 'alerta' | 'error'; titulo?: ReactNode; children?: ReactNode; accion?: ReactNode; className?: string
 }) {
