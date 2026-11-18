@@ -9,6 +9,12 @@ interface Deposito {
   guardar(clave: string, archivo: Blob): Promise<void>
 }
 
+/** CAP-114: dirección pública de una imagen de ejemplo de la demo, o null si la ruta no es de un ejemplo. */
+export function rutaEjemplo(ruta: string): string | null {
+  const m = /^[0-9a-f-]{36}\/(ejemplo-[a-z0-9-]+\.png)$/.exec(ruta)
+  return m ? `${import.meta.env?.BASE_URL ?? '/'}ejemplos/${m[1]}` : null
+}
+
 function enMemoria(): Deposito {
   const mapa = new Map<string, Blob>()
   return {
@@ -54,7 +60,10 @@ export function almacenamientoLocal({ persistir = typeof indexedDB !== 'undefine
       const hecha = urls.get(clave)
       if (hecha) return hecha
       const archivo = await deposito.leer(clave)
-      if (!archivo) return null
+      // CAP-114 (George): las imágenes de ejemplo de la demo («<id>/ejemplo-….png») no están en este navegador;
+      // se sirven desde public/ejemplos, las mismas que están en Supabase Storage. Cualquier otra ruta sin archivo
+      // sigue devolviendo null, como promete el contrato (LSP, diap. 64–79).
+      if (!archivo) return rutaEjemplo(ruta)
       const nueva = URL.createObjectURL(archivo)
       urls.set(clave, nueva)
       return nueva
