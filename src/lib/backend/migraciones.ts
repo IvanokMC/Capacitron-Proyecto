@@ -9,6 +9,8 @@ import camposEvento from '../../../supabase/migrations/20261109000001_campos_eve
 import validacionesEvento from '../../../supabase/migrations/20261116000001_validaciones_evento.sql?raw'
 // CAP-94 (Carlos): foto del usuario
 import fotoUsuario from '../../../supabase/migrations/20261116000002_foto_usuario.sql?raw'
+// CAP-78 (José): campos públicos del evento y formulario de contacto
+import camposPublicos from '../../../supabase/migrations/20261117000001_campos_publicos_evento.sql?raw'
 
 interface Ejecutor {
   exec(sql: string): Promise<unknown>
@@ -38,7 +40,7 @@ exception when others then
 end $$;
 `
 
-const SQL = [esquema, funcionesBase, funcionesOperacion, demo, endurecimiento, camposEvento, validacionesEvento, fotoUsuario, RPC_LOCAL]
+const SQL = [esquema, funcionesBase, funcionesOperacion, demo, endurecimiento, camposEvento, validacionesEvento, fotoUsuario, camposPublicos, RPC_LOCAL]
 
 /** Huella del SQL: si cambia una migración, la base local se recrea. */
 export const VERSION_SQL = (() => {

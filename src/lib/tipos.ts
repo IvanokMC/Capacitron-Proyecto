@@ -55,6 +55,11 @@ export interface Evento {
   tiene_enlace: boolean
   enlace_plataforma: 'zoom' | 'meet' | 'teams' | null
   enlace_virtual?: string | null
+  /** CAP-78: datos públicos de la HU-02. `contacto` solo llega si el organizador autorizó mostrarlo. */
+  tipo: 'seminario' | 'congreso' | 'taller' | 'curso' | null
+  organizador_nombre: string | null
+  contacto_publico: boolean
+  contacto: string | null
   organizador_id: string
   organizador: string
   institucion: { id: string; nombre: string; siglas: string | null } | null

@@ -17,6 +17,18 @@ export const TIPOS_EVENTO: { valor: TipoEvento; etiqueta: string }[] = [
   { valor: 'curso', etiqueta: 'Curso' },
 ]
 
+/** CAP-78: etiqueta visible del tipo de evento; usa la misma lista que el formulario (diap. 33, sin duplicar). */
+export function etiquetaTipo(tipo: string | null | undefined): string | null {
+  return TIPOS_EVENTO.find((t) => t.valor === tipo)?.etiqueta ?? null
+}
+
+/** CAP-78: «quién organiza» en una línea: el nombre público elegido y, si hay, la institución. */
+export function textoOrganiza(e: { organizador_nombre: string | null; organizador: string; institucion: { nombre: string } | null }): string {
+  const quien = e.organizador_nombre ?? e.organizador
+  if (!e.institucion || e.institucion.nombre === quien) return quien
+  return `${quien} · ${e.institucion.nombre}`
+}
+
 export interface CamposPublicacion {
   modalidad: string
   tipo: string
