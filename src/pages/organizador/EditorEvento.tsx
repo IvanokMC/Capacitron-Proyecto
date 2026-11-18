@@ -5,17 +5,30 @@ import { useApp } from '../../lib/app'
 import { ErrorApi } from '../../lib/backend'
 import type { Evento, Plan } from '../../lib/tipos'
 import { aInputLocal, desdeInputLocal } from '../../lib/formato'
-import { Aviso, AreaTexto, Boton, Campo, CargandoLista, cx, EncabezadoPagina, Entrada, Panel } from '../../components/ui'
+import { Aviso, AreaTexto, Boton, Campo, CargandoLista, Casilla, cx, EncabezadoPagina, Entrada, Panel, Selector } from '../../components/ui'
+import { faltantesParaPublicar, TIPOS_EVENTO } from '../../lib/validacionEvento'
 import { useNotas } from '../../components/notificaciones'
 
+// CAP-77 (José, Frontend): el formulario suma tipo, organizador, contacto y consentimiento (HU-02, CA-06 a CA-08).
 interface Form {
   nombre: string; descripcion: string; modalidad: string; lugar: string; fecha_inicio: string; fecha_fin: string
   cupo_maximo: string; costo: string; horas_academicas: string; porcentaje_minimo: string; firmante_nombre: string; firmante_cargo: string
+  tipo: string; organizador_nombre: string; contacto: string; contacto_consentimiento: boolean
+}
+
+// Lo que evento_gestion devuelve al organizador (el contacto no sale en las vistas públicas).
+type EventoGestion = Evento & {
+  tiene_inscripciones: boolean
+  tipo: string | null
+  organizador_nombre: string | null
+  contacto: string | null
+  contacto_consentimiento: boolean
 }
 
 const VACIO: Form = {
   nombre: '', descripcion: '', modalidad: 'presencial', lugar: '', fecha_inicio: '', fecha_fin: '', cupo_maximo: '',
   costo: '0', horas_academicas: '', porcentaje_minimo: '80', firmante_nombre: '', firmante_cargo: '',
+  tipo: '', organizador_nombre: '', contacto: '', contacto_consentimiento: false,
 }
 
 const MENSAJES: Record<string, string> = {
@@ -37,7 +50,7 @@ export default function EditorEvento() {
   const notas = useNotas()
   const navegar = useNavigate()
   const [f, setF] = useState<Form>({ ...VACIO, firmante_nombre: usuario?.nombre_completo ?? '', firmante_cargo: 'Coordinación académica' })
-  const [original, setOriginal] = useState<(Evento & { tiene_inscripciones: boolean }) | null>(null)
+  const [original, setOriginal] = useState<EventoGestion | null>(null)
   const [cargando, setCargando] = useState(!!id)
   const [errores, setErrores] = useState<Record<string, string>>({})
   const [general, setGeneral] = useState<{ texto: string; plan?: boolean } | null>(null)
@@ -47,7 +60,7 @@ export default function EditorEvento() {
 
   useEffect(() => {
     if (!id) return
-    api<Evento & { tiene_inscripciones: boolean }>('evento_gestion', { id })
+    api<EventoGestion>('evento_gestion', { id })
       .then((e) => {
         setOriginal(e)
         setF({
@@ -55,6 +68,8 @@ export default function EditorEvento() {
           fecha_inicio: aInputLocal(e.fecha_inicio), fecha_fin: aInputLocal(e.fecha_fin), cupo_maximo: String(e.cupo_maximo),
           costo: String(e.costo), horas_academicas: String(e.horas_academicas), porcentaje_minimo: String(e.porcentaje_minimo),
           firmante_nombre: e.firmante_nombre ?? '', firmante_cargo: e.firmante_cargo ?? '',
+          tipo: e.tipo ?? '', organizador_nombre: e.organizador_nombre ?? '', contacto: e.contacto ?? '',
+          contacto_consentimiento: e.contacto_consentimiento ?? false,
         })
       })
       .catch((e) => setGeneral({ texto: e.message }))
@@ -62,13 +77,14 @@ export default function EditorEvento() {
   }, [id, api])
 
   const conInscritos = original?.tiene_inscripciones && (original.cupos_ocupados > 0)
-  const set = (k: keyof Form) => (v: string) => {
+  const set = (k: keyof Form) => (v: string | boolean) => {
     setF((x) => ({ ...x, [k]: v }))
     setErrores((e) => ({ ...e, [k]: '' }))
   }
 
-  function validar() {
-    const e: Record<string, string> = {}
+  // Publicar exige además tipo, lugar, organizador y contacto (CA-07); un borrador se guarda incompleto (CA-02).
+  function validar(accion: 'borrador' | 'publicar' | 'guardar') {
+    const e: Record<string, string> = accion === 'publicar' ? faltantesParaPublicar(f) : {}
     for (const k of ['nombre', 'descripcion', 'fecha_inicio', 'fecha_fin', 'cupo_maximo', 'costo', 'horas_academicas'] as const) {
       if (!f[k].trim()) e[k] = MENSAJES[k]
     }
@@ -83,7 +99,7 @@ export default function EditorEvento() {
 
   async function guardar(accion: 'borrador' | 'publicar' | 'guardar') {
     setGeneral(null)
-    const e = validar()
+    const e = validar(accion)
     setErrores(e)
     if (Object.keys(e).length) {
       setGeneral({ texto: 'Completa los campos resaltados.' })
@@ -97,6 +113,8 @@ export default function EditorEvento() {
         lugar: f.modalidad === 'virtual' ? null : f.lugar, fecha_inicio: desdeInputLocal(f.fecha_inicio), fecha_fin: desdeInputLocal(f.fecha_fin),
         cupo_maximo: f.cupo_maximo, costo: f.costo, horas_academicas: f.horas_academicas, porcentaje_minimo: f.porcentaje_minimo,
         firmante_nombre: f.firmante_nombre, firmante_cargo: f.firmante_cargo,
+        tipo: f.tipo || null, organizador_nombre: f.organizador_nombre, contacto: f.contacto,
+        contacto_consentimiento: f.contacto_consentimiento,
       })
       notas.exito(accion === 'publicar' ? 'Evento publicado' : accion === 'borrador' ? 'Borrador guardado' : 'Cambios guardados')
       navegar(`/organizador/eventos/${r.evento.id}`)
@@ -168,6 +186,32 @@ export default function EditorEvento() {
           {f.modalidad !== 'presencial' && (
             <p className="text-[13px] text-tinta-3">El enlace de la sala se agrega desde la gestión del evento; solo lo verán los inscritos confirmados.</p>
           )}
+        </Panel>
+
+        <Panel className="space-y-5 p-5 sm:p-6">
+          <div>
+            <h2 className="text-[15px] font-semibold">Tipo, organizador y contacto</h2>
+            <p className="mt-1 text-[13px] text-tinta-3">Se piden para publicar. Puedes guardar el borrador sin ellos.</p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Campo etiqueta="Tipo de evento" htmlFor="tipo" error={errores.tipo}>
+              <Selector id="tipo" value={f.tipo} onChange={(e) => set('tipo')(e.target.value)} invalido={!!errores.tipo}>
+                <option value="">Elige un tipo</option>
+                {TIPOS_EVENTO.map((t) => <option key={t.valor} value={t.valor}>{t.etiqueta}</option>)}
+              </Selector>
+            </Campo>
+            <Campo etiqueta="Organizador" htmlFor="org" error={errores.organizador_nombre} ayuda="Persona o entidad que el público verá como organizadora.">
+              <Entrada id="org" value={f.organizador_nombre} onChange={(e) => set('organizador_nombre')(e.target.value)}
+                invalido={!!errores.organizador_nombre} maxLength={160} />
+            </Campo>
+          </div>
+          <Campo etiqueta="Contacto" htmlFor="contacto" error={errores.contacto} ayuda="Correo o teléfono para consultas sobre el evento.">
+            <Entrada id="contacto" value={f.contacto} onChange={(e) => set('contacto')(e.target.value)} invalido={!!errores.contacto} maxLength={160} />
+          </Campo>
+          <Casilla id="consent" checked={f.contacto_consentimiento} onChange={(v) => set('contacto_consentimiento')(v)}>
+            Autorizo mostrar este contacto en la página pública del evento. Si no lo autorizas, el público verá un formulario de
+            contacto en su lugar (Ley N.° 29733).
+          </Casilla>
         </Panel>
 
         <Panel className="space-y-5 p-5 sm:p-6">
