@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import type { Almacenamiento, Bucket } from './contrato'
 import { almacenamientoLocal } from './local'
+import { leerToken } from '../sesion'
 
 export * from './contrato'
 
@@ -15,8 +16,14 @@ export function almacenamiento(): Promise<Almacenamiento> {
     const url = import.meta.env.VITE_SUPABASE_URL as string | undefined
     const clave = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
     instancia = url && clave
-      ? Promise.all([import('@supabase/supabase-js'), import('./supabase')]).then(([{ createClient }, { almacenamientoSupabase }]) =>
-        almacenamientoSupabase(createClient(url, clave, { auth: { persistSession: false } })))
+      ? Promise.all([import('@supabase/supabase-js'), import('./supabase')]).then(([{ createClient }, { almacenamientoSupabase }]) => {
+        const cliente = createClient(url, clave, { auth: { persistSession: false } })
+        // CAP-92: enlace firmado de un comprobante. La Edge Function comprueba la sesión con la base de datos.
+        return almacenamientoSupabase(cliente, async (_bucket, ruta) => {
+          const { data, error } = await cliente.functions.invoke<{ url: string }>('url-comprobante', { body: { token: leerToken(), ruta } })
+          return error || !data?.url ? null : data.url
+        })
+      })
       : Promise.resolve(almacenamientoLocal())
   }
   return instancia
