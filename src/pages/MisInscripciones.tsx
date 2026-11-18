@@ -1,19 +1,20 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import {
-  Bell, CalendarBlank, Certificate, ChatCircleText, DeviceMobile, DownloadSimple, MapPin, PaypalLogo, QrCode, Receipt,
+  Bell, CalendarBlank, Certificate, ChatCircleText, Clock, DownloadSimple, MapPin, QrCode, Receipt,
   VideoCamera, XCircle, Hourglass, CheckCircle,
 } from '@phosphor-icons/react'
 import { useApp, useCarga } from '../lib/app'
-import type { MetodoPago, MiEspera, MiInscripcion, Pago } from '../lib/tipos'
+import type { MiEspera, MiInscripcion, Pago } from '../lib/tipos'
 import { fechaHora, hora, METODO, MODALIDAD, PLATAFORMA, rangoEvento, relativo, soles } from '../lib/formato'
 import { pdfCertificado, pdfComprobante } from '../lib/pdf'
 import { ImagenQr } from '../components/qr'
 import { InsigniaInscripcion, Jornadas } from '../components/tejido'
 import {
-  Aviso, Boton, BotonEnlace, CargandoLista, Campo, cx, Dialogo, EncabezadoPagina, Entrada, Insignia, Panel, Pestanas, Vacio,
+  Aviso, Boton, BotonEnlace, CargandoLista, cx, Dialogo, EncabezadoPagina, Insignia, Panel, Pestanas, Vacio,
 } from '../components/ui'
 import { useNotas } from '../components/notificaciones'
+import { estadoPagoManual } from '../lib/pagoManual'
 
 interface Datos { inscripciones: MiInscripcion[]; lista_espera: MiEspera[] }
 
@@ -24,7 +25,9 @@ export default function MisInscripciones() {
   const [params, setParams] = useSearchParams()
   const [pestana, setPestana] = useState<'activas' | 'historial'>('activas')
   const [qr, setQr] = useState<MiInscripcion | null>(null)
-  const [pagar, setPagar] = useState<MiInscripcion | null>(null)
+  // CAP-90: pagar abre la pantalla de pago propia (SRP, diap. 39–49), ya no un diálogo dentro de esta lista.
+  const navegar = useNavigate()
+  const irAPagar = (id: string) => navegar(`/mis-inscripciones/${id}/pagar`)
   const [cancelar, setCancelar] = useState<MiInscripcion | null>(null)
 
   const activas = useMemo(() => (datos?.inscripciones ?? []).filter((i) =>
@@ -37,7 +40,7 @@ export default function MisInscripciones() {
     const p = params.get('pagar')
     if (p) {
       const ins = datos.inscripciones.find((i) => i.id === p && i.estado === 'pendiente_pago')
-      if (ins) setPagar(ins)
+      if (ins) { irAPagar(ins.id); return }
       params.delete('pagar')
       setParams(params, { replace: true })
     }
@@ -80,7 +83,7 @@ export default function MisInscripciones() {
           </Panel>
         )}
         {lista.map((i) => (
-          <TarjetaInscripcion key={i.id} i={i} onQr={() => setQr(i)} onPagar={() => setPagar(i)} onCancelar={() => setCancelar(i)} />
+          <TarjetaInscripcion key={i.id} i={i} onQr={() => setQr(i)} onPagar={() => irAPagar(i.id)} onCancelar={() => setCancelar(i)} />
         ))}
       </div>
 
@@ -94,7 +97,6 @@ export default function MisInscripciones() {
       )}
 
       <DialogoQr i={qr} onCerrar={() => setQr(null)} />
-      {pagar && <Pasarela i={pagar} onCerrar={() => { setPagar(null); recargar() }} />}
       <DialogoCancelar i={cancelar} onCerrar={() => setCancelar(null)} onListo={() => { setCancelar(null); recargar() }} />
     </div>
   )
@@ -110,7 +112,9 @@ function TarjetaInscripcion({ i, onQr, onPagar, onCancelar }: {
   const [bajando, setBajando] = useState(false)
   const terminado = e.fase === 'finalizado'
   const pagosHechos = i.pagos.filter((p) => p.estado === 'confirmado' || p.estado === 'reembolsado')
-  const intentosFallidos = i.estado === 'pendiente_pago' ? i.pagos.filter((p) => p.estado === 'rechazado' || p.estado === 'sin_respuesta') : []
+  // Intentos de la pasarela simulada (demostración); los pagos manuales se muestran con su estado (CAP-90).
+  const intentosFallidos = i.estado === 'pendiente_pago' ? i.pagos.filter((p) => !p.numero_operacion && (p.estado === 'rechazado' || p.estado === 'sin_respuesta')) : []
+  const manual = estadoPagoManual(i)
 
   async function certificado() {
     setBajando(true)
@@ -126,7 +130,11 @@ function TarjetaInscripcion({ i, onQr, onPagar, onCancelar }: {
   }
 
   let principal: ReactNode = null
-  if (i.estado === 'pendiente_pago') principal = <Boton variante="primario" onClick={onPagar}>Pagar {soles(i.monto)}</Boton>
+  if (i.estado === 'pendiente_pago') {
+    principal = manual?.estado === 'por_verificar'
+      ? <Boton onClick={onPagar}>Ver mi pago</Boton>
+      : <Boton variante="primario" onClick={onPagar}>{manual?.estado === 'rechazado' ? 'Volver a enviar' : `Pagar ${soles(i.monto)}`}</Boton>
+  }
   else if (i.estado === 'confirmada' && !terminado && e.estado !== 'cancelado') {
     principal = <Boton variante="primario" icono={<QrCode className="size-[18px]" />} onClick={onQr}>Ver código QR</Boton>
   } else if (terminado && i.certificado?.estado === 'valido') {
@@ -165,6 +173,19 @@ function TarjetaInscripcion({ i, onQr, onPagar, onCancelar }: {
           <p className="flex items-center gap-2 text-qolle-tinta">
             <Hourglass className="size-4" weight="bold" />
             Cupo reservado hasta las {hora(i.reserva_expira_en)} h ({relativo(i.reserva_expira_en, ahora())}). Si no se confirma el pago, se libera.
+          </p>
+        )}
+        {/* CAP-90 (HU-16 CA-02 y CA-04): estado del pago enviado para verificar. */}
+        {manual?.estado === 'por_verificar' && (
+          <p className="flex items-center gap-2 text-qolle-tinta">
+            <Clock className="size-4" weight="bold" />
+            Pago por verificar (operación {manual.pago.numero_operacion}). Tu cupo sigue reservado; te avisaremos por correo.
+          </p>
+        )}
+        {manual?.estado === 'rechazado' && (
+          <p className="flex items-start gap-2 text-error">
+            <XCircle className="mt-0.5 size-4 shrink-0" weight="fill" />
+            <span>Pago rechazado: {manual.pago.motivo_rechazo}</span>
           </p>
         )}
         {intentosFallidos.length > 0 && (
@@ -328,153 +349,6 @@ function DialogoCancelar({ i, onCerrar, onListo }: { i: MiInscripcion | null; on
         Tu cupo se liberará para la siguiente persona de la lista de espera.
         {i && i.estado === 'confirmada' && i.monto > 0 && ` El reembolso de ${soles(i.monto)} se procesa por el mismo medio de pago.`}
       </p>
-    </Dialogo>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// Pasarela simulada (HU-04): Yape, Plin, PayPal
-// ---------------------------------------------------------------------------
-
-type Resultado = 'aprobado' | 'rechazado' | 'sin_respuesta'
-
-function Pasarela({ i, onCerrar }: { i: MiInscripcion; onCerrar: () => void }) {
-  const { api, ahora, latir } = useApp()
-  const notas = useNotas()
-  const [metodo, setMetodo] = useState<MetodoPago>('yape')
-  const [celular, setCelular] = useState('')
-  const [codigo, setCodigo] = useState('')
-  const [cuenta, setCuenta] = useState('')
-  const [simular, setSimular] = useState<Resultado>('aprobado')
-  const [errores, setErrores] = useState<Record<string, string>>({})
-  const [procesando, setProcesando] = useState(false)
-  const [final, setFinal] = useState<{ ok: boolean; mensaje?: string; pago?: Pago } | null>(null)
-  const [, setTic] = useState(0)
-
-  useEffect(() => {
-    const id = window.setInterval(() => setTic((n) => n + 1), 15_000)
-    return () => window.clearInterval(id)
-  }, [])
-
-  function validar() {
-    const e: Record<string, string> = {}
-    if (metodo === 'paypal') {
-      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(cuenta)) e.cuenta = 'Escribe el correo de tu cuenta PayPal.'
-    } else {
-      if (!/^9\d{8}$/.test(celular)) e.celular = 'El celular debe tener 9 dígitos y empezar con 9.'
-      if (!/^\d{6}$/.test(codigo)) e.codigo = `Escribe el código de aprobación de 6 dígitos que muestra ${METODO[metodo]}.`
-    }
-    return e
-  }
-
-  async function pagar() {
-    const e = validar()
-    setErrores(e)
-    if (Object.keys(e).length) return
-    setProcesando(true)
-    try {
-      const { pago } = await api<{ pago: Pago }>('iniciar_pago', { inscripcion_id: i.id, metodo })
-      // La plataforma tarda un momento en responder.
-      await new Promise((r) => setTimeout(r, simular === 'sin_respuesta' ? 1600 : 900))
-      const r = await api<{ ok: boolean; mensaje?: string; pago?: Pago }>('respuesta_pasarela', { pago_id: pago.id, resultado: simular })
-      setFinal(r)
-      if (r.ok) { notas.exito('Pago confirmado'); latir() }
-    } catch (err) {
-      notas.error(err)
-    } finally {
-      setProcesando(false)
-    }
-  }
-
-  const vence = i.reserva_expira_en
-
-  return (
-    <Dialogo abierto onCerrar={onCerrar} titulo="Pagar inscripción" descripcion={i.evento.nombre} ancho="max-w-md"
-      pie={final?.ok ? (
-        <>
-          <Boton icono={<DownloadSimple className="size-4" />} onClick={async () => pdfComprobante(await api('comprobante_pago', { pago_id: final.pago!.id }))}>
-            Descargar comprobante
-          </Boton>
-          <Boton variante="primario" onClick={onCerrar}>Listo</Boton>
-        </>
-      ) : final ? (
-        <>
-          <Boton onClick={onCerrar}>Pagar después</Boton>
-          <Boton variante="primario" onClick={() => setFinal(null)}>Reintentar</Boton>
-        </>
-      ) : (
-        <>
-          <Boton onClick={onCerrar}>Cancelar</Boton>
-          <Boton variante="primario" cargando={procesando} onClick={pagar}>Pagar {soles(i.monto)}</Boton>
-        </>
-      )}>
-      {final ? (
-        final.ok ? (
-          <div className="estampa flex flex-col items-center py-4 text-center">
-            <CheckCircle weight="fill" className="size-14 text-chilca" />
-            <p className="mt-3 text-lg font-semibold">Pago confirmado</p>
-            <p className="mt-1 text-sm text-tinta-3">Comprobante <span className="font-mono text-tinta">{final.pago?.numero_comprobante}</span>. También te lo enviamos por correo.</p>
-          </div>
-        ) : (
-          <div className="estampa flex flex-col items-center py-4 text-center">
-            <XCircle weight="fill" className="size-14 text-error" />
-            <p className="mt-3 text-lg font-semibold">El pago no se completó</p>
-            <p className="mt-1 text-sm text-tinta-2">{final.mensaje}</p>
-          </div>
-        )
-      ) : (
-        <div className="space-y-5">
-          <div className="flex items-baseline justify-between rounded-lg bg-fondo px-4 py-3">
-            <span className="text-sm text-tinta-3">Total</span>
-            <span className="num text-2xl font-semibold">{soles(i.monto)}</span>
-          </div>
-          {vence && (
-            <p className="flex items-center gap-2 text-[13px] text-qolle-tinta">
-              <Hourglass weight="bold" className="size-4" />Tu cupo está reservado hasta las {hora(vence)} h ({relativo(vence, ahora())}).
-            </p>
-          )}
-          <fieldset>
-            <legend className="mb-2 text-[13px] font-medium text-tinta-2">Medio de pago</legend>
-            <div className="grid grid-cols-3 gap-2">
-              {(['yape', 'plin', 'paypal'] as MetodoPago[]).map((m) => (
-                <label key={m} className={cx('flex cursor-pointer flex-col items-center gap-1.5 rounded-lg border px-2 py-3 text-sm font-medium transition-colors',
-                  metodo === m ? 'border-grana bg-grana-clara/50 text-tinta' : 'border-linea-fuerte text-tinta-2 hover:border-tinta-3')}>
-                  <input type="radio" className="sr-only" name="metodo" checked={metodo === m} onChange={() => { setMetodo(m); setErrores({}) }} />
-                  {m === 'paypal' ? <PaypalLogo className="size-6" /> : <DeviceMobile className="size-6" />}
-                  {METODO[m]}
-                </label>
-              ))}
-            </div>
-          </fieldset>
-          {metodo === 'paypal' ? (
-            <Campo etiqueta="Cuenta PayPal" htmlFor="cuenta" error={errores.cuenta}>
-              <Entrada id="cuenta" type="email" value={cuenta} onChange={(e) => setCuenta(e.target.value)} invalido={!!errores.cuenta} placeholder="tu@correo.com" />
-            </Campo>
-          ) : (
-            <div className="grid grid-cols-2 gap-3">
-              <Campo etiqueta={`Celular ${METODO[metodo]}`} htmlFor="cel" error={errores.celular}>
-                <Entrada id="cel" inputMode="numeric" maxLength={9} value={celular} onChange={(e) => setCelular(e.target.value.replace(/\D/g, ''))} invalido={!!errores.celular} placeholder="9XXXXXXXX" />
-              </Campo>
-              <Campo etiqueta="Código de aprobación" htmlFor="cod" error={errores.codigo}>
-                <Entrada id="cod" inputMode="numeric" maxLength={6} value={codigo} onChange={(e) => setCodigo(e.target.value.replace(/\D/g, ''))} invalido={!!errores.codigo} className="font-mono tracking-[0.3em]" />
-              </Campo>
-            </div>
-          )}
-          <div className="rounded-lg border border-dashed border-linea-fuerte p-3">
-            <p className="text-[13px] font-medium text-tinta-2">Simulador de pasarela (demo)</p>
-            <p className="mt-0.5 text-xs text-tinta-3">Elige qué responderá la plataforma de pago. No se guarda ningún dato del medio de pago.</p>
-            <div role="radiogroup" className="mt-2 flex flex-wrap gap-1.5">
-              {([['aprobado', 'Aprobar'], ['rechazado', 'Rechazar'], ['sin_respuesta', 'No responder']] as [Resultado, string][]).map(([v, t]) => (
-                <button key={v} type="button" role="radio" aria-checked={simular === v} onClick={() => setSimular(v)}
-                  className={cx('h-8 rounded-md px-3 text-[13px] font-medium transition-colors',
-                    simular === v ? 'bg-tinta text-white' : 'bg-hundido text-tinta-2 hover:text-tinta')}>
-                  {t}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
     </Dialogo>
   )
 }
