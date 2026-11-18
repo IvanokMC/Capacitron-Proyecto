@@ -135,10 +135,13 @@ describe('CAP-99 CA-03: cambiar el celular y dar o retirar el consentimiento des
       .toMatchObject({ celular: '956789012', comparte_celular: true })
   })
 
-  it('las cuentas de la demostración (creadas antes de CAP-99) quedan sin celular', async () => {
+  // CAP-102 (George) agregó celulares DE EJEMPLO a 5 cuentas de la demo. La garantía de CAP-99 sigue: la migración no
+  // inventa celulares; las demás cuentas, creadas como antes de la HU-18, quedan sin celular.
+  it('las cuentas de la demostración quedan sin celular, salvo las 5 de ejemplo de CAP-102', async () => {
     const demo = await nuevaBd({ demo: true })
-    const [{ con }] = await demo.sql<{ con: number }>(`select count(*) filter (where celular is not null)::int as con from capa.usuarios`)
-    expect(con).toBe(0)
+    const filas = await demo.sql<{ correo: string }>(`select correo from capa.usuarios where celular is not null order by correo`)
+    expect(filas.map((f) => f.correo)).toEqual(['diego.mamani@capacitron.demo', 'estudiante@capacitron.demo',
+      'luis.ccahuana@capacitron.demo', 'ponente@capacitron.demo', 'valeria.condori@capacitron.demo'])
   })
 })
 
