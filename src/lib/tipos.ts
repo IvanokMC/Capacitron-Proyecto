@@ -43,9 +43,6 @@ export interface Evento {
   fecha_fin: string
   modalidad: Modalidad
   lugar: string | null
-  /** CAP-104: punto del lugar; null en eventos virtuales o publicados antes de la HU-19. */
-  latitud: number | null
-  longitud: number | null
   cupo_maximo: number
   cupos_ocupados: number
   cupos_disponibles: number

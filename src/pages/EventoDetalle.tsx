@@ -15,10 +15,16 @@ import { BloqueUbicacion } from '../components/UbicacionEvento'
 import { MapaEvento } from '../components/MapaEvento'
 import { enlaceComoLlegar, puntoDe } from '../lib/mapa'
 import { etiquetaTipo, textoOrganiza } from '../lib/validacionEvento'
+import { FlyerEvento, ImagenLugar } from '../components/ImagenEvento'
+import { useUrlArchivo } from '../lib/almacenamiento'
+import { altImagen } from '../lib/imagenesEvento'
 
 export function EventoDetalle() {
   const { id } = useParams()
   const { datos: e, error, cargando, recargar } = useCarga<TEvento>('detalle_evento', { id })
+  // CAP-110 (José): direcciones del flyer y de la imagen del lugar (HU-20). Los hooks van antes de los return.
+  const urlFlyer = useUrlArchivo('eventos', e?.flyer_url)
+  const urlLugar = useUrlArchivo('eventos', e?.imagen_lugar_url)
 
   if (cargando && !e) return <CargandoLista filas={3} />
   if (error || !e) {
@@ -64,12 +70,16 @@ export function EventoDetalle() {
         </div>
 
         <aside className="space-y-4 lg:sticky lg:top-[84px] lg:self-start">
+          {/* CAP-110: el flyer es lo primero de la columna, antes del botón de inscripción (HU-20 CA-01 y CA-03).
+              Se ve sin sesión: detalle_evento devuelve la ruta a cualquier visitante y el bucket es público. */}
+          <FlyerEvento src={urlFlyer} alt={altImagen(e.flyer_alt, `Flyer de ${e.nombre}`)} />
           <PanelAccion e={e} recargar={recargar} />
           {/* CAP-105 (José): mapa con el punto, la dirección, la hora de inicio y «Cómo llegar» (HU-19 CA-02 y CA-03).
               BloqueUbicacion no muestra nada en eventos virtuales (CA-04). */}
           <BloqueUbicacion modalidad={e.modalidad} lugar={e.lugar} inicio={e.fecha_inicio}
             mapa={puntoDe(e) && <MapaEvento punto={puntoDe(e)} etiqueta={`Mapa con la ubicación de ${e.lugar}`} />}
-            enlaceIndicaciones={puntoDe(e) && enlaceComoLlegar(puntoDe(e)!)} />
+            enlaceIndicaciones={puntoDe(e) && enlaceComoLlegar(puntoDe(e)!)}
+            imagen={urlLugar && <ImagenLugar src={urlLugar} alt={altImagen(e.imagen_lugar_alt, `Imagen del lugar: ${e.lugar}`)} />} />
           {!e.es_organizador && <ContactoOrganizador e={e} />}
         </aside>
       </div>
