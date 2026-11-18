@@ -1,35 +1,46 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { CalendarBlank, MagnifyingGlass, MapPin, Plus, VideoCamera, Buildings } from '@phosphor-icons/react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
+import { CalendarBlank, MapPin, Plus, VideoCamera, Buildings } from '@phosphor-icons/react'
 import { useApp, useCarga } from '../lib/app'
 import type { Evento } from '../lib/tipos'
 import { hora, MODALIDAD, num, precio, rangoEvento, claveDia } from '../lib/formato'
-import { BandaCupos, BloqueFecha, InsigniaFase } from '../components/tejido'
-import { Aviso, BotonEnlace, CargandoLista, cx, Entrada, Selector, Vacio, Boton } from '../components/ui'
-
-const MODALIDADES = [
-  { valor: '', texto: 'Todas' },
-  { valor: 'presencial', texto: 'Presencial' },
-  { valor: 'virtual', texto: 'Virtual' },
-  { valor: 'mixta', texto: 'Mixta' },
-]
+import { BandaCupos, InsigniaFase } from '../components/tejido'
+import { PortadaTarjeta } from '../components/ImagenEvento'
+import { useUrlArchivo } from '../lib/almacenamiento'
+import { altImagen } from '../lib/imagenesEvento'
+import { Aviso, BotonEnlace, CargandoLista, cx, Insignia } from '../components/ui'
+import { BarraFiltros, PanelFiltros, SinResultados } from '../components/FiltrosCatalogo'
+import { FILTROS_VACIOS, fichasActivas, filtrosAUrl, filtrosDesdeUrl, paramsCatalogo, useRetraso, type EstadoFiltros } from '../lib/filtrosCatalogo'
+import { etiquetaTipo, textoOrganiza } from '../lib/validacionEvento'
 
 export function Catalogo() {
   const { usuario } = useApp()
-  const [texto, setTexto] = useState('')
-  const [q, setQ] = useState('')
-  const [modalidad, setModalidad] = useState('')
-  const [precioF, setPrecioF] = useState('')
-  const [pasados, setPasados] = useState(false)
+  // CAP-81 (Medaly): los filtros salen de la dirección y vuelven a ella (CA-05: no se guardan en
+  // otro lado). Al volver del detalle de un evento, el catálogo sigue filtrado igual.
+  const [sp, setSp] = useSearchParams()
+  const [filtros, setFiltros] = useState<EstadoFiltros>(() => filtrosDesdeUrl(sp))
+  // Solo lo que se escribe espera a que la persona termine; los selectores consultan de inmediato.
+  const q = useRetraso(filtros.q)
+  const ubicacion = useRetraso(filtros.ubicacion)
+  const consulta = useMemo(() => ({ ...filtros, q, ubicacion }), [filtros, q, ubicacion])
 
+  const escrita = useRef(sp.toString())
   useEffect(() => {
-    const id = window.setTimeout(() => setQ(texto.trim()), 250)
-    return () => window.clearTimeout(id)
-  }, [texto])
+    const nueva = filtrosAUrl(consulta).toString()
+    escrita.current = nueva
+    if (nueva !== sp.toString()) setSp(nueva, { replace: true })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [consulta])
+  // Si la dirección cambia desde afuera (el enlace «Eventos» del menú, o atrás en el navegador),
+  // el panel se pone al día con ella en vez de pisarla.
+  useEffect(() => {
+    if (sp.toString() !== escrita.current) {
+      escrita.current = sp.toString()
+      setFiltros(filtrosDesdeUrl(sp))
+    }
+  }, [sp])
 
-  const { datos, cargando, error } = useCarga<Evento[]>('catalogo_eventos', {
-    q, modalidad, precio: precioF, incluir_pasados: pasados,
-  })
+  const { datos, cargando, error } = useCarga<Evento[]>('catalogo_eventos', { ...paramsCatalogo(consulta) })
 
   const grupos = useMemo(() => {
     const ev = datos ?? []
@@ -40,7 +51,8 @@ export function Catalogo() {
     ].filter((g) => g.eventos.length > 0)
   }, [datos])
 
-  const hayFiltros = q || modalidad || precioF
+  const hayFiltros = fichasActivas(consulta).length > 0
+  const limpiar = () => setFiltros(FILTROS_VACIOS)
 
   return (
     <div>
@@ -58,61 +70,17 @@ export function Catalogo() {
         )}
       </div>
 
-      <div className="mb-6 flex flex-col gap-3 rounded-xl border border-linea bg-superficie p-3 md:flex-row md:items-center">
-        <div className="relative flex-1">
-          <MagnifyingGlass className="pointer-events-none absolute left-3 top-1/2 size-[18px] -translate-y-1/2 text-tinta-3" />
-          <Entrada
-            type="search"
-            aria-label="Buscar eventos"
-            placeholder="Buscar por nombre, tema o institución"
-            value={texto}
-            onChange={(e) => setTexto(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        <div className="flex flex-wrap items-center gap-2 lg:flex-nowrap">
-          <div role="radiogroup" aria-label="Modalidad" className="flex rounded-lg bg-hundido p-1">
-            {MODALIDADES.map((m) => (
-              <button
-                key={m.valor}
-                role="radio"
-                aria-checked={modalidad === m.valor}
-                onClick={() => setModalidad(m.valor)}
-                className={cx('h-9 rounded-md px-3 text-[13px] font-medium transition-colors',
-                  modalidad === m.valor ? 'bg-superficie text-tinta shadow-panel' : 'text-tinta-3 hover:text-tinta')}
-              >
-                {m.texto}
-              </button>
-            ))}
-          </div>
-          <div className="w-full sm:w-44">
-            <Selector aria-label="Precio" value={precioF} onChange={(e) => setPrecioF(e.target.value)}>
-              <option value="">Cualquier precio</option>
-              <option value="gratis">Gratis</option>
-              <option value="pago">De pago</option>
-            </Selector>
-          </div>
-          <label className="flex h-11 cursor-pointer items-center gap-2 whitespace-nowrap px-2 text-[13px] text-tinta-2">
-            <input type="checkbox" className="size-4 accent-grana" checked={pasados} onChange={(e) => setPasados(e.target.checked)} />
-            Incluir finalizados
-          </label>
-        </div>
-      </div>
+      <PanelFiltros filtros={filtros} onCambio={setFiltros} />
+      <BarraFiltros filtros={filtros} onCambio={setFiltros} onLimpiar={limpiar}
+        total={cargando && !datos ? null : (datos?.length ?? 0)} />
 
       {error && <Aviso tipo="error" titulo="No pudimos cargar los eventos">{error.message}</Aviso>}
 
       {cargando && !datos ? (
         <CargandoLista filas={5} />
       ) : grupos.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-linea-fuerte bg-superficie">
-          <Vacio
-            icono={<CalendarBlank className="size-6" />}
-            titulo={hayFiltros ? 'Ningún evento coincide con tu búsqueda' : 'Todavía no hay eventos publicados'}
-            accion={hayFiltros ? <Boton onClick={() => { setTexto(''); setModalidad(''); setPrecioF('') }}>Quitar filtros</Boton> : undefined}
-          >
-            {hayFiltros ? 'Prueba con otra palabra o cambia la modalidad y el precio.' : 'Cuando una institución publique un evento, aparecerá aquí.'}
-          </Vacio>
-        </div>
+        <SinResultados hayFiltros={hayFiltros} pasados={filtros.pasados} onLimpiar={limpiar}
+          onVerFinalizados={() => setFiltros({ ...filtros, pasados: true })} />
       ) : (
         <div className="space-y-9">
           {grupos.map((g) => (
@@ -136,14 +104,23 @@ function FilaEvento({ e }: { e: Evento }) {
   const lleno = e.cupos_disponibles === 0
   const pocos = !lleno && e.cupos_disponibles <= Math.max(3, Math.ceil(e.cupo_maximo * 0.1))
   const variosDias = claveDia(e.fecha_inicio) !== claveDia(e.fecha_fin)
+  // CAP-110 (José): la base guarda la ruta del flyer; la dirección la da el módulo común de almacenamiento (DIP, diap. 92–106).
+  const flyer = useUrlArchivo('eventos', e.flyer_url)
   return (
     <li className="group relative transition-colors hover:bg-fondo/70">
       <div className="grid gap-x-5 gap-y-3 p-4 sm:grid-cols-[auto_minmax(0,1fr)_minmax(200px,260px)] sm:p-5">
-        <BloqueFecha fecha={e.fecha_inicio} fase={e.fase} />
+        {/* CAP-110: con flyer, la miniatura con el día encima; sin flyer, el bloque de fecha de siempre (HU-20 CA-01, ficha CAP-108).
+            `w-fit self-start`: la celda de la grilla se estira al alto (escritorio) y al ancho (celular) de la fila, y
+            el día quedaba debajo de la miniatura o a lo ancho de la fila (hallazgo H-01 de CAP-110, visto en las capturas). */}
+        <div className="w-fit self-start">
+          <PortadaTarjeta flyer={flyer} alt={altImagen(e.flyer_alt, `Flyer de ${e.nombre}`)} fecha={e.fecha_inicio} fase={e.fase} />
+        </div>
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             {e.fase === 'en_curso' && <InsigniaFase fase="en_curso" />}
             {e.fase === 'finalizado' && <InsigniaFase fase="finalizado" />}
+            {/* CAP-78 (José): tipo del evento en la tarjeta (HU-02 CA-06) */}
+            {etiquetaTipo(e.tipo) && <Insignia tinte="anil" punto={false}>{etiquetaTipo(e.tipo)}</Insignia>}
           </div>
           <h3 className="mt-0.5 text-[17px] font-semibold leading-snug">
             <Link to={`/eventos/${e.id}`} className="no-underline after:absolute after:inset-0 group-hover:text-grana-tinta">
@@ -152,7 +129,7 @@ function FilaEvento({ e }: { e: Evento }) {
           </h3>
           <p className="mt-1 flex items-center gap-1.5 text-[13px] text-tinta-3">
             <Buildings className="size-4 shrink-0" />
-            <span className="truncate">{e.institucion?.nombre ?? e.organizador}</span>
+            <span className="truncate">{textoOrganiza(e)}</span>
           </p>
           <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-tinta-2">
             <span className="inline-flex items-center gap-1.5">
