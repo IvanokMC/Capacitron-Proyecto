@@ -3,8 +3,10 @@ import {
   type SelectHTMLAttributes, type TextareaHTMLAttributes,
 } from 'react'
 import { Link } from 'react-router-dom'
-import { CircleNotch, Info, Warning, WarningCircle, CheckCircle, X, UploadSimple, Trash } from '@phosphor-icons/react'
-import { iniciales } from '../lib/formato'
+import {
+  CircleNotch, Info, Warning, WarningCircle, CheckCircle, X, UploadSimple, Trash, LockSimple, WhatsappLogo,
+} from '@phosphor-icons/react'
+import { celular as formatoCelular, iniciales } from '../lib/formato'
 
 export const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).join(' ')
 
@@ -460,6 +462,108 @@ export function SelectorFoto({
         </p>
       </div>
     </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Celular con consentimiento (CAP-98 · Medaly, Diseño UI/UX · HU-18 Celular del asistente)
+//
+// Teoría de Diseño de Software:
+// · Separación de responsabilidades (diap. 6 y 19): el consentimiento va en el mismo bloque que el
+//   dato que protege; quien ve el celular ve también para qué se usa y cómo retirarlo.
+// · SRP (diap. 39–49): estos componentes solo muestran. Validar el formato (CAP-100, José) y decidir
+//   quién ve el número (CAP-99, Carlos) se hace fuera; por eso reciben el error y el celular ya filtrado.
+// · Encapsulación (diap. 20–24): CeldaCelular no sabe por qué falta un número; si la API no lo entrega,
+//   muestra «No compartido» y no hay forma de deducir el dato desde la pantalla.
+// · Cohesión (diap. 26–28): el registro y el perfil usan el mismo CampoCelular, con los mismos textos.
+// ---------------------------------------------------------------------------
+
+export const TEXTOS_CELULAR = {
+  ayuda: '9 dígitos, empieza con 9. Por ejemplo: 984 123 456.',
+  consentimiento: 'Compartir mi celular con los organizadores de los eventos en los que me inscriba.',
+  explicacion: 'Lo usan solo para avisos o consultas del evento, por llamada o WhatsApp. Nunca se publica y puedes retirar el permiso cuando quieras desde «Mi perfil» (Ley N.° 29733).',
+  retirado: 'Al guardar, los organizadores dejarán de ver tu celular.',
+  noCompartido: 'No compartido',
+} as const
+
+/**
+ * Celular (+51) con la casilla de consentimiento debajo, en un solo grupo.
+ * Solo deja escribir dígitos (hasta 9); el formato lo valida quien lo usa y entrega el `error`.
+ * `comparteAntes` indica si la persona ya había dado permiso: al quitarlo se avisa qué pasará (CA-03).
+ */
+export function CampoCelular({
+  valor, onCambio, comparte, onComparte, error, comparteAntes = false, etiqueta = 'Celular', opcional = false,
+}: {
+  valor: string; onCambio: (v: string) => void; comparte: boolean; onComparte: (v: boolean) => void
+  error?: string | null; comparteAntes?: boolean; etiqueta?: string; opcional?: boolean
+}) {
+  const id = useId()
+  const idAyuda = `${id}-ayuda`
+  const idExplica = `${id}-explica`
+  return (
+    <fieldset className="space-y-3">
+      <legend className="sr-only">{etiqueta} y permiso para compartirlo</legend>
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor={id} className="text-[13px] font-medium text-tinta-2">
+          {etiqueta}
+          {opcional && <span className="ml-1 font-normal text-tinta-3">(opcional)</span>}
+        </label>
+        <div className={cx('flex h-11 items-stretch overflow-hidden rounded-lg border bg-superficie',
+          'focus-within:outline-2 focus-within:outline-offset-1 focus-within:outline-grana',
+          error ? 'border-error' : 'border-linea-fuerte')}>
+          <span className="grid place-items-center border-r border-linea bg-fondo px-3 text-sm text-tinta-3" aria-hidden>+51</span>
+          <input id={id} type="tel" inputMode="numeric" autoComplete="tel-national" maxLength={9} placeholder="984 123 456"
+            value={valor} onChange={(e) => onCambio(e.target.value.replace(/\D/g, '').slice(0, 9))}
+            aria-describedby={idAyuda} aria-invalid={!!error || undefined}
+            className="num min-w-0 flex-1 bg-transparent px-3 text-[15px] tracking-wide outline-none placeholder:text-tinta-3/70" />
+        </div>
+        <p id={idAyuda} role={error ? 'alert' : undefined}
+          className={cx('flex items-start gap-1.5 text-[13px]', error ? 'text-error' : 'text-tinta-3')}>
+          {error && <WarningCircle className="mt-px size-4 shrink-0" weight="fill" />}
+          {error || TEXTOS_CELULAR.ayuda}
+        </p>
+      </div>
+      <div className="rounded-lg border border-linea bg-fondo/60 px-3.5 py-3">
+        <label className="flex cursor-pointer items-start gap-2.5 text-sm text-tinta">
+          <input type="checkbox" checked={comparte} onChange={(e) => onComparte(e.target.checked)} aria-describedby={idExplica}
+            className="mt-0.5 size-[18px] shrink-0 cursor-pointer rounded accent-grana" />
+          <span className="font-medium">{TEXTOS_CELULAR.consentimiento}</span>
+        </label>
+        <p id={idExplica} className="mt-1.5 pl-[28px] text-[13px] leading-relaxed text-tinta-3">
+          {comparteAntes && !comparte
+            ? <span className="font-medium text-qolle-tinta">{TEXTOS_CELULAR.retirado}</span>
+            : TEXTOS_CELULAR.explicacion}
+        </p>
+      </div>
+    </fieldset>
+  )
+}
+
+/**
+ * Celda «Celular» de la lista de inscritos del organizador.
+ * Con número (solo llega si la persona dio permiso): el número y el botón de WhatsApp.
+ * Sin número: «No compartido», sin pistas del dato.
+ */
+export function CeldaCelular({ celular, nombre, enlaceWhatsapp }: {
+  celular?: string | null; nombre: string; enlaceWhatsapp?: string | null
+}) {
+  if (!celular) {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-[13px] text-tinta-3" title="La persona no autorizó compartir su celular">
+        <LockSimple className="size-4 shrink-0" aria-hidden /> {TEXTOS_CELULAR.noCompartido}
+      </span>
+    )
+  }
+  return (
+    <span className="inline-flex flex-wrap items-center gap-x-3 gap-y-1.5">
+      <a href={`tel:+51${celular}`} className="num whitespace-nowrap text-tinta-2 no-underline hover:underline">{formatoCelular(celular)}</a>
+      {enlaceWhatsapp && (
+        <a href={enlaceWhatsapp} target="_blank" rel="noreferrer" aria-label={`Escribir por WhatsApp a ${nombre}`}
+          className="pulsable inline-flex h-8 items-center gap-1.5 rounded-lg border border-chilca/25 bg-chilca-clara px-2.5 text-[13px] font-medium text-chilca no-underline hover:border-chilca/50">
+          <WhatsappLogo className="size-4" weight="fill" aria-hidden /> WhatsApp
+        </a>
+      )}
+    </span>
   )
 }
 
