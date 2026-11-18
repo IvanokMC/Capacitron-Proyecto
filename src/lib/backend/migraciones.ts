@@ -4,6 +4,11 @@ import funcionesBase from '../../../supabase/migrations/20261005000002_funciones
 import funcionesOperacion from '../../../supabase/migrations/20261005000003_funciones_operacion.sql?raw'
 import demo from '../../../supabase/migrations/20261005000004_demo.sql?raw'
 import endurecimiento from '../../../supabase/migrations/20261005000006_endurecimiento.sql?raw'
+// Sprint 2 · CAP-76 (campos del evento) y CAP-77 (validaciones). Antes solo estaban en la base de pruebas.
+import camposEvento from '../../../supabase/migrations/20261109000001_campos_evento.sql?raw'
+import validacionesEvento from '../../../supabase/migrations/20261116000001_validaciones_evento.sql?raw'
+// CAP-94 (Carlos): foto del usuario
+import fotoUsuario from '../../../supabase/migrations/20261116000002_foto_usuario.sql?raw'
 
 interface Ejecutor {
   exec(sql: string): Promise<unknown>
@@ -33,7 +38,7 @@ exception when others then
 end $$;
 `
 
-const SQL = [esquema, funcionesBase, funcionesOperacion, demo, endurecimiento, RPC_LOCAL]
+const SQL = [esquema, funcionesBase, funcionesOperacion, demo, endurecimiento, camposEvento, validacionesEvento, fotoUsuario, RPC_LOCAL]
 
 /** Huella del SQL: si cambia una migración, la base local se recrea. */
 export const VERSION_SQL = (() => {
