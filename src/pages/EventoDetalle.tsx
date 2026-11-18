@@ -11,6 +11,9 @@ import { BandaCupos, InsigniaFase, InsigniaInscripcion } from '../components/tej
 import { Aviso, Avatar, Boton, BotonEnlace, CargandoLista, Dialogo, Panel, Vacio } from '../components/ui'
 import { useNotas } from '../components/notificaciones'
 import { ContactoOrganizador } from '../components/ContactoOrganizador'
+import { BloqueUbicacion } from '../components/UbicacionEvento'
+import { MapaEvento } from '../components/MapaEvento'
+import { enlaceComoLlegar, puntoDe } from '../lib/mapa'
 import { etiquetaTipo, textoOrganiza } from '../lib/validacionEvento'
 
 export function EventoDetalle() {
@@ -62,6 +65,11 @@ export function EventoDetalle() {
 
         <aside className="space-y-4 lg:sticky lg:top-[84px] lg:self-start">
           <PanelAccion e={e} recargar={recargar} />
+          {/* CAP-105 (José): mapa con el punto, la dirección, la hora de inicio y «Cómo llegar» (HU-19 CA-02 y CA-03).
+              BloqueUbicacion no muestra nada en eventos virtuales (CA-04). */}
+          <BloqueUbicacion modalidad={e.modalidad} lugar={e.lugar} inicio={e.fecha_inicio}
+            mapa={puntoDe(e) && <MapaEvento punto={puntoDe(e)} etiqueta={`Mapa con la ubicación de ${e.lugar}`} />}
+            enlaceIndicaciones={puntoDe(e) && enlaceComoLlegar(puntoDe(e)!)} />
           {!e.es_organizador && <ContactoOrganizador e={e} />}
         </aside>
       </div>
