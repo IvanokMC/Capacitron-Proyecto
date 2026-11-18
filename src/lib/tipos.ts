@@ -26,6 +26,8 @@ export interface Usuario {
   rol: Rol
   estado: string
   recordatorios_activos: boolean
+  /** CAP-94: ruta de la foto en el bucket de fotos (<id>/<archivo>); null = mostrar iniciales. */
+  foto_url: string | null
   institucion: { id: string; nombre: string; siglas: string | null; estado: string; plan: Plan } | null
 }
 
