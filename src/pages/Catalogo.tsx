@@ -5,7 +5,8 @@ import { useApp, useCarga } from '../lib/app'
 import type { Evento } from '../lib/tipos'
 import { hora, MODALIDAD, num, precio, rangoEvento, claveDia } from '../lib/formato'
 import { BandaCupos, BloqueFecha, InsigniaFase } from '../components/tejido'
-import { Aviso, BotonEnlace, CargandoLista, cx, Entrada, Selector, Vacio, Boton } from '../components/ui'
+import { Aviso, BotonEnlace, CargandoLista, cx, Entrada, Insignia, Selector, Vacio, Boton } from '../components/ui'
+import { etiquetaTipo, textoOrganiza } from '../lib/validacionEvento'
 
 const MODALIDADES = [
   { valor: '', texto: 'Todas' },
@@ -144,6 +145,8 @@ function FilaEvento({ e }: { e: Evento }) {
           <div className="flex flex-wrap items-center gap-2">
             {e.fase === 'en_curso' && <InsigniaFase fase="en_curso" />}
             {e.fase === 'finalizado' && <InsigniaFase fase="finalizado" />}
+            {/* CAP-78 (José): tipo del evento en la tarjeta (HU-02 CA-06) */}
+            {etiquetaTipo(e.tipo) && <Insignia tinte="anil" punto={false}>{etiquetaTipo(e.tipo)}</Insignia>}
           </div>
           <h3 className="mt-0.5 text-[17px] font-semibold leading-snug">
             <Link to={`/eventos/${e.id}`} className="no-underline after:absolute after:inset-0 group-hover:text-grana-tinta">
@@ -152,7 +155,7 @@ function FilaEvento({ e }: { e: Evento }) {
           </h3>
           <p className="mt-1 flex items-center gap-1.5 text-[13px] text-tinta-3">
             <Buildings className="size-4 shrink-0" />
-            <span className="truncate">{e.institucion?.nombre ?? e.organizador}</span>
+            <span className="truncate">{textoOrganiza(e)}</span>
           </p>
           <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-tinta-2">
             <span className="inline-flex items-center gap-1.5">
