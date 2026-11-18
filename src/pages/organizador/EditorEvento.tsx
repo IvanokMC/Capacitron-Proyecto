@@ -7,6 +7,9 @@ import type { Evento, Plan } from '../../lib/tipos'
 import { aInputLocal, desdeInputLocal } from '../../lib/formato'
 import { Aviso, AreaTexto, Boton, Campo, CargandoLista, Casilla, cx, EncabezadoPagina, Entrada, Panel, Selector } from '../../components/ui'
 import { faltantesParaPublicar, TIPOS_EVENTO } from '../../lib/validacionEvento'
+import { SelectorUbicacion, type Punto } from '../../components/UbicacionEvento'
+import { MapaEvento } from '../../components/MapaEvento'
+import { puntoDe, useBusquedaDirecciones } from '../../lib/mapa'
 import { useNotas } from '../../components/notificaciones'
 
 // CAP-77 (José, Frontend): el formulario suma tipo, organizador, contacto y consentimiento (HU-02, CA-06 a CA-08).
@@ -57,6 +60,10 @@ export default function EditorEvento() {
   const [enviando, setEnviando] = useState<string | null>(null)
   const formRef = useRef<HTMLFormElement>(null)
   const plan: Plan | undefined = usuario?.institucion?.plan
+  // CAP-105 (José): punto en el mapa (HU-19 CA-01). Solo se buscan direcciones cuando la persona escribe.
+  const [punto, setPunto] = useState<Punto | null>(null)
+  const [buscarLugar, setBuscarLugar] = useState(false)
+  const busqueda = useBusquedaDirecciones(buscarLugar ? f.lugar : null)
 
   useEffect(() => {
     if (!id) return
@@ -71,6 +78,7 @@ export default function EditorEvento() {
           tipo: e.tipo ?? '', organizador_nombre: e.organizador_nombre ?? '', contacto: e.contacto ?? '',
           contacto_consentimiento: e.contacto_consentimiento ?? false,
         })
+        setPunto(puntoDe(e))
       })
       .catch((e) => setGeneral({ texto: e.message }))
       .finally(() => setCargando(false))
@@ -84,7 +92,7 @@ export default function EditorEvento() {
 
   // Publicar exige además tipo, lugar, organizador y contacto (CA-07); un borrador se guarda incompleto (CA-02).
   function validar(accion: 'borrador' | 'publicar' | 'guardar') {
-    const e: Record<string, string> = accion === 'publicar' ? faltantesParaPublicar(f) : {}
+    const e: Record<string, string> = accion === 'publicar' ? faltantesParaPublicar({ ...f, tienePunto: !!punto }) : {}
     for (const k of ['nombre', 'descripcion', 'fecha_inicio', 'fecha_fin', 'cupo_maximo', 'costo', 'horas_academicas'] as const) {
       if (!f[k].trim()) e[k] = MENSAJES[k]
     }
@@ -115,6 +123,8 @@ export default function EditorEvento() {
         firmante_nombre: f.firmante_nombre, firmante_cargo: f.firmante_cargo,
         tipo: f.tipo || null, organizador_nombre: f.organizador_nombre, contacto: f.contacto,
         contacto_consentimiento: f.contacto_consentimiento,
+        latitud: f.modalidad === 'virtual' ? null : punto?.lat ?? null,
+        longitud: f.modalidad === 'virtual' ? null : punto?.lng ?? null,
       })
       notas.exito(accion === 'publicar' ? 'Evento publicado' : accion === 'borrador' ? 'Borrador guardado' : 'Cambios guardados')
       navegar(`/organizador/eventos/${r.evento.id}`)
@@ -179,9 +189,28 @@ export default function EditorEvento() {
             </div>
           </fieldset>
           {f.modalidad !== 'virtual' && (
-            <Campo etiqueta="Lugar" htmlFor="lugar" error={errores.lugar} ayuda="Ambiente, edificio y dirección.">
-              <Entrada id="lugar" value={f.lugar} onChange={(e) => set('lugar')(e.target.value)} invalido={!!errores.lugar} />
-            </Campo>
+            // CAP-105: lugar y punto en el mapa con el diseño de CAP-103; el mapa real entra por la prop `mapa`.
+            <SelectorUbicacion
+              lugar={f.lugar}
+              onLugar={(v) => { set('lugar')(v); setBuscarLugar(true) }}
+              sugerencias={busqueda.resultados}
+              buscando={busqueda.buscando}
+              sinResultados={busqueda.sinResultados}
+              onElegir={(idSug) => {
+                const r = busqueda.resultados.find((x) => x.id === idSug)
+                if (!r) return
+                setBuscarLugar(false)
+                set('lugar')(r.nombre)
+                setPunto(r.punto)
+                setErrores((x) => ({ ...x, ubicacion: '', latitud: '', longitud: '' }))
+              }}
+              punto={punto}
+              onQuitarPunto={() => setPunto(null)}
+              mapa={<MapaEvento punto={punto} etiqueta="Mapa para marcar el lugar del evento"
+                onElegir={(p) => { setPunto(p); setBuscarLugar(false); setErrores((x) => ({ ...x, ubicacion: '', latitud: '', longitud: '' })) }} />}
+              error={errores.ubicacion || errores.latitud || errores.longitud || null}
+              errorLugar={errores.lugar || null}
+            />
           )}
           {f.modalidad !== 'presencial' && (
             <p className="text-[13px] text-tinta-3">El enlace de la sala se agrega desde la gestión del evento; solo lo verán los inscritos confirmados.</p>
