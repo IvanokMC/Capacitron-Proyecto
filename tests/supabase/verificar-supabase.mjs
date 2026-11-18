@@ -46,7 +46,7 @@ async function realtime() {
 // 2) Concurrencia -----------------------------------------------------------
 async function cuentaPrueba(correo) {
   try {
-    await rpc('registrar_usuario', { nombres: 'Prueba', apellidos: correo.split('@')[0], correo, password: 'Prueba2026x', acepta_privacidad: true })
+    await rpc('registrar_usuario', { nombres: 'Prueba', apellidos: correo.split('@')[0], correo, password: 'Prueba2026x', acepta_privacidad: true, celular: '984123456' })
     const correos = await rpc('correo_demo', { para: correo })
     const token = correos.find((c) => c.tipo === 'confirmacion').accion_url.split('/').pop()
     await rpc('confirmar_cuenta', { token })
