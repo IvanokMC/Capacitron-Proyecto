@@ -7,7 +7,8 @@ import { ErrorApi } from '../lib/backend'
 import { almacenamiento, ErrorAlmacenamiento, useUrlArchivo } from '../lib/almacenamiento'
 import { fotoVisible, guardarFoto, useFotoPerfil } from '../lib/fotoPerfil'
 import { ROL } from '../lib/formato'
-import { Boton, Campo, EncabezadoPagina, Entrada, Interruptor, Panel, SelectorFoto } from '../components/ui'
+import { Boton, Campo, CampoCelular, EncabezadoPagina, Entrada, Interruptor, Panel, SelectorFoto } from '../components/ui'
+import { limpiarCelular, validarCelularPerfil } from '../lib/celular'
 import { useNotas } from '../components/notificaciones'
 
 const FALLO_SUBIDA = 'No se pudo subir la foto. Revisa tu conexión e inténtalo otra vez.'
@@ -18,6 +19,10 @@ export default function Perfil() {
   const [nombres, setNombres] = useState(usuario?.nombres ?? '')
   const [apellidos, setApellidos] = useState(usuario?.apellidos ?? '')
   const [recordatorios, setRecordatorios] = useState(usuario?.recordatorios_activos ?? true)
+  // CAP-100 (José): celular y consentimiento (HU-18 CA-03 y HU-17 CA-04).
+  const [celular, setCelular] = useState(usuario?.celular ?? '')
+  const [comparte, setComparte] = useState(usuario?.comparte_celular ?? false)
+  const [errorCelular, setErrorCelular] = useState<string | null>(null)
   const [errores, setErrores] = useState<string[]>([])
   const [guardando, setGuardando] = useState(false)
   const [subiendo, setSubiendo] = useState(false)
@@ -29,6 +34,8 @@ export default function Perfil() {
     setNombres(usuario.nombres)
     setApellidos(usuario.apellidos)
     setRecordatorios(usuario.recordatorios_activos)
+    setCelular(usuario.celular ?? '')
+    setComparte(usuario.comparte_celular)
   }, [usuario])
 
   if (!usuario) return null
@@ -36,6 +43,9 @@ export default function Perfil() {
   async function guardar(e: FormEvent) {
     e.preventDefault()
     if (!usuario) return
+    const errCel = validarCelularPerfil(celular, usuario.celular, comparte)
+    setErrorCelular(errCel)
+    if (errCel) return
     setGuardando(true)
     try {
       // 1) Sube la foto nueva, si hay. Si falla, no se guarda nada y se mantiene la foto anterior.
@@ -50,7 +60,10 @@ export default function Perfil() {
         setSubiendo(false)
       }
       // 2) Guarda los datos y la ruta de la foto juntos (CAP-94).
-      await api('actualizar_perfil', { nombres, apellidos, recordatorios_activos: recordatorios, ...cambioFoto })
+      await api('actualizar_perfil', {
+        nombres, apellidos, recordatorios_activos: recordatorios, ...cambioFoto,
+        celular: limpiarCelular(celular), comparte_celular: comparte,
+      })
       await refrescarUsuario()
       foto.guardada()
       setErrores([])
@@ -59,6 +72,7 @@ export default function Perfil() {
       if (err instanceof ErrorApi) {
         setErrores(err.campos)
         if (err.campos.includes('foto_url')) foto.fallo(err.message)
+        if (err.campos.includes('celular')) setErrorCelular(err.message)
       }
       notas.error(err instanceof ErrorApi ? err : String(err))
     } finally {
@@ -97,6 +111,10 @@ export default function Perfil() {
           <Campo etiqueta="Correo" htmlFor="c" ayuda="El correo identifica tu cuenta y no se puede cambiar.">
             <Entrada id="c" value={usuario.correo} disabled />
           </Campo>
+          {/* CAP-100: celular debajo del correo (ficha CAP-98); avisa si se retira el permiso (HU-18 CA-03) */}
+          <CampoCelular valor={celular} onCambio={(v) => { setCelular(v); setErrorCelular(null) }} comparte={comparte}
+            onComparte={(v) => { setComparte(v); setErrorCelular(null) }} error={errorCelular}
+            comparteAntes={usuario.comparte_celular} opcional={!usuario.celular} />
           {/* CA-04: rol e institución, de solo lectura */}
           <div className="grid gap-4 sm:grid-cols-2">
             <Campo etiqueta="Rol" htmlFor="rol">
