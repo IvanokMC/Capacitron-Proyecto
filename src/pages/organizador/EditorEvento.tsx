@@ -11,6 +11,10 @@ import { SelectorUbicacion, type Punto } from '../../components/UbicacionEvento'
 import { MapaEvento } from '../../components/MapaEvento'
 import { puntoDe, useBusquedaDirecciones } from '../../lib/mapa'
 import { useNotas } from '../../components/notificaciones'
+import { CampoImagen, TEXTOS_IMAGEN } from '../../components/ImagenEvento'
+import { almacenamiento, ErrorAlmacenamiento, useUrlArchivo } from '../../lib/almacenamiento'
+import { IMAGEN_INICIAL, imagenVisible, useImagenElegida } from '../../lib/imagenElegida'
+import { cambiosImagenes, hayCambiosImagenes, REGLAS_IMAGEN, type ClaveImagen, type ImagenFormulario } from '../../lib/imagenesEvento'
 
 // CAP-77 (José, Frontend): el formulario suma tipo, organizador, contacto y consentimiento (HU-02, CA-06 a CA-08).
 interface Form {
@@ -64,6 +68,16 @@ export default function EditorEvento() {
   const [punto, setPunto] = useState<Punto | null>(null)
   const [buscarLugar, setBuscarLugar] = useState(false)
   const busqueda = useBusquedaDirecciones(buscarLugar ? f.lugar : null)
+  // CAP-110 (José): flyer e imagen del lugar (HU-20 CA-01, CA-02 y CA-04). Los estados (vista previa, rechazo
+  // con motivo, quitar) son los mismos que los de la foto de perfil (lib/imagenElegida.ts); el diseño es el de
+  // CampoImagen (CAP-108, Medaly). Se suben al guardar el evento, no al elegirlas.
+  const flyer = useImagenElegida(REGLAS_IMAGEN.flyer)
+  const imgLugar = useImagenElegida(REGLAS_IMAGEN.imagen_lugar)
+  const [altFlyer, setAltFlyer] = useState('')
+  const [altLugar, setAltLugar] = useState('')
+  const [subiendo, setSubiendo] = useState(false)
+  const urlFlyer = useUrlArchivo('eventos', original?.flyer_url)
+  const urlLugar = useUrlArchivo('eventos', original?.imagen_lugar_url)
 
   useEffect(() => {
     if (!id) return
@@ -79,6 +93,8 @@ export default function EditorEvento() {
           contacto_consentimiento: e.contacto_consentimiento ?? false,
         })
         setPunto(puntoDe(e))
+        setAltFlyer(e.flyer_alt ?? '')
+        setAltLugar(e.imagen_lugar_alt ?? '')
       })
       .catch((e) => setGeneral({ texto: e.message }))
       .finally(() => setCargando(false))
@@ -126,6 +142,7 @@ export default function EditorEvento() {
         latitud: f.modalidad === 'virtual' ? null : punto?.lat ?? null,
         longitud: f.modalidad === 'virtual' ? null : punto?.lng ?? null,
       })
+      if (!(await guardarImagenes(r.evento.id))) return
       notas.exito(accion === 'publicar' ? 'Evento publicado' : accion === 'borrador' ? 'Borrador guardado' : 'Cambios guardados')
       navegar(`/organizador/eventos/${r.evento.id}`)
     } catch (err) {
@@ -135,6 +152,39 @@ export default function EditorEvento() {
       } else setGeneral({ texto: String(err) })
     } finally {
       setEnviando(null)
+    }
+  }
+
+  /**
+   * CAP-110: después de guardar el evento (ya tiene id y carpeta), sube las imágenes nuevas y guarda sus rutas con
+   * guardar_imagenes_evento (CAP-109). Devuelve false si falló: el evento ya quedó guardado, así que se avisa y
+   * se deja la edición de ese evento abierta para volver a intentarlo.
+   */
+  async function guardarImagenes(eventoId: string): Promise<boolean> {
+    const imagenes: Record<ClaveImagen, ImagenFormulario> = {
+      flyer: { estado: flyer.estado, alt: altFlyer, ruta: original?.flyer_url ?? null, altGuardado: original?.flyer_alt ?? null },
+      // En un evento virtual no hay bloque de ubicación (HU-19 CA-04): la imagen del lugar no se toca.
+      imagen_lugar: f.modalidad === 'virtual'
+        ? { estado: IMAGEN_INICIAL, alt: original?.imagen_lugar_alt ?? '', ruta: original?.imagen_lugar_url ?? null, altGuardado: original?.imagen_lugar_alt ?? null }
+        : { estado: imgLugar.estado, alt: altLugar, ruta: original?.imagen_lugar_url ?? null, altGuardado: original?.imagen_lugar_alt ?? null },
+    }
+    if (!hayCambiosImagenes(imagenes)) return true
+    setSubiendo(true)
+    try {
+      const cambios = await cambiosImagenes(await almacenamiento(), eventoId, imagenes)
+      await api('guardar_imagenes_evento', { id: eventoId, ...cambios })
+      return true
+    } catch (err) {
+      const motivo = err instanceof ErrorAlmacenamiento && err.codigo === 'ARCHIVO' ? err.message
+        : err instanceof ErrorApi ? err.message : 'No se pudo subir la imagen. Revisa tu conexión e inténtalo de nuevo.'
+      notas.error(`El evento se guardó, pero no las imágenes: ${motivo}`)
+      if (id) {
+        if (imagenes.flyer.estado.archivo) flyer.fallo(motivo)
+        if (imagenes.imagen_lugar.estado.archivo) imgLugar.fallo(motivo)
+      } else navegar(`/organizador/eventos/${eventoId}/editar`, { replace: true })
+      return false
+    } finally {
+      setSubiendo(false)
     }
   }
 
@@ -165,6 +215,11 @@ export default function EditorEvento() {
           <Campo etiqueta="Descripción" htmlFor="desc" error={errores.descripcion} ayuda="Qué aprenderán los asistentes y a quién está dirigido.">
             <AreaTexto id="desc" value={f.descripcion} onChange={(e) => set('descripcion')(e.target.value)} invalido={!!errores.descripcion} rows={4} />
           </Campo>
+          {/* CAP-110: flyer después de la descripción, como en la ficha CAP-108 (CA-01 y CA-04). */}
+          <CampoImagen etiqueta={TEXTOS_IMAGEN.flyer} ayuda={TEXTOS_IMAGEN.ayudaFlyer}
+            vista={imagenVisible(flyer.estado, urlFlyer)} vistaPrevia={!!flyer.estado.previa}
+            onElegir={flyer.elegir} onQuitar={flyer.quitar} error={flyer.estado.error} cargando={subiendo && !!flyer.estado.archivo}
+            alt={altFlyer} onAlt={setAltFlyer} altEjemplo={TEXTOS_IMAGEN.altEjemploFlyer} />
           <fieldset>
             <legend className="mb-2 text-[13px] font-medium text-tinta-2">Modalidad</legend>
             <div className="grid gap-2 sm:grid-cols-3">
@@ -211,6 +266,13 @@ export default function EditorEvento() {
               error={errores.ubicacion || errores.latitud || errores.longitud || null}
               errorLugar={errores.lugar || null}
             />
+          )}
+          {f.modalidad !== 'virtual' && (
+            // CAP-110: imagen del lugar debajo del selector de ubicación (CA-02); en la página va junto al mapa.
+            <CampoImagen etiqueta={TEXTOS_IMAGEN.lugar} ayuda={TEXTOS_IMAGEN.ayudaLugar} proporcion="lugar"
+              vista={imagenVisible(imgLugar.estado, urlLugar)} vistaPrevia={!!imgLugar.estado.previa}
+              onElegir={imgLugar.elegir} onQuitar={imgLugar.quitar} error={imgLugar.estado.error} cargando={subiendo && !!imgLugar.estado.archivo}
+              alt={altLugar} onAlt={setAltLugar} altEjemplo={TEXTOS_IMAGEN.altEjemploLugar} />
           )}
           {f.modalidad !== 'presencial' && (
             <p className="text-[13px] text-tinta-3">El enlace de la sala se agrega desde la gestión del evento; solo lo verán los inscritos confirmados.</p>

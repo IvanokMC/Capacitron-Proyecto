@@ -4,7 +4,10 @@ import { CalendarBlank, MapPin, Plus, VideoCamera, Buildings } from '@phosphor-i
 import { useApp, useCarga } from '../lib/app'
 import type { Evento } from '../lib/tipos'
 import { hora, MODALIDAD, num, precio, rangoEvento, claveDia } from '../lib/formato'
-import { BandaCupos, BloqueFecha, InsigniaFase } from '../components/tejido'
+import { BandaCupos, InsigniaFase } from '../components/tejido'
+import { PortadaTarjeta } from '../components/ImagenEvento'
+import { useUrlArchivo } from '../lib/almacenamiento'
+import { altImagen } from '../lib/imagenesEvento'
 import { Aviso, BotonEnlace, CargandoLista, cx, Insignia } from '../components/ui'
 import { BarraFiltros, PanelFiltros, SinResultados } from '../components/FiltrosCatalogo'
 import { FILTROS_VACIOS, fichasActivas, filtrosAUrl, filtrosDesdeUrl, paramsCatalogo, useRetraso, type EstadoFiltros } from '../lib/filtrosCatalogo'
@@ -101,10 +104,17 @@ function FilaEvento({ e }: { e: Evento }) {
   const lleno = e.cupos_disponibles === 0
   const pocos = !lleno && e.cupos_disponibles <= Math.max(3, Math.ceil(e.cupo_maximo * 0.1))
   const variosDias = claveDia(e.fecha_inicio) !== claveDia(e.fecha_fin)
+  // CAP-110 (José): la base guarda la ruta del flyer; la dirección la da el módulo común de almacenamiento (DIP, diap. 92–106).
+  const flyer = useUrlArchivo('eventos', e.flyer_url)
   return (
     <li className="group relative transition-colors hover:bg-fondo/70">
       <div className="grid gap-x-5 gap-y-3 p-4 sm:grid-cols-[auto_minmax(0,1fr)_minmax(200px,260px)] sm:p-5">
-        <BloqueFecha fecha={e.fecha_inicio} fase={e.fase} />
+        {/* CAP-110: con flyer, la miniatura con el día encima; sin flyer, el bloque de fecha de siempre (HU-20 CA-01, ficha CAP-108).
+            `w-fit self-start`: la celda de la grilla se estira al alto (escritorio) y al ancho (celular) de la fila, y
+            el día quedaba debajo de la miniatura o a lo ancho de la fila (hallazgo H-01 de CAP-110, visto en las capturas). */}
+        <div className="w-fit self-start">
+          <PortadaTarjeta flyer={flyer} alt={altImagen(e.flyer_alt, `Flyer de ${e.nombre}`)} fecha={e.fecha_inicio} fase={e.fase} />
+        </div>
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             {e.fase === 'en_curso' && <InsigniaFase fase="en_curso" />}
