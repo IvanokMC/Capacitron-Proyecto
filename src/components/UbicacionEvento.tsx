@@ -56,7 +56,7 @@ export function MarcoMapa({ children, instruccion, invalido, className }: {
  * Página del evento (CA-02 a CA-04). Un evento virtual no muestra nada: la regla queda aquí y la página
  * no tiene que repetirla. Si no hay punto marcado, se ve la dirección sin mapa ni botón.
  */
-export function BloqueUbicacion({ modalidad, lugar, inicio, mapa, enlaceIndicaciones }: {
+export function BloqueUbicacion({ modalidad, lugar, inicio, mapa, enlaceIndicaciones, imagen }: {
   modalidad: string
   lugar: string | null
   /** Fecha y hora de inicio (ISO). */
@@ -65,6 +65,8 @@ export function BloqueUbicacion({ modalidad, lugar, inicio, mapa, enlaceIndicaci
   mapa?: ReactNode
   /** Enlace a las indicaciones en Google Maps (lo arma CAP-105). */
   enlaceIndicaciones?: string | null
+  /** CAP-108 (HU-20 CA-02): imagen del lugar, debajo del mapa (o sola si no hay punto). */
+  imagen?: ReactNode
 }) {
   const titulo = useId()
   if (modalidad === 'virtual' || !lugar) return null
@@ -73,6 +75,7 @@ export function BloqueUbicacion({ modalidad, lugar, inicio, mapa, enlaceIndicaci
       <section aria-labelledby={titulo}>
         <h2 id={titulo} className="sr-only">{TEXTOS_UBICACION.titulo}</h2>
         {mapa && <MarcoMapa className="rounded-none border-0 border-b">{mapa}</MarcoMapa>}
+        {imagen && <div className="border-b border-linea">{imagen}</div>}
         <div className="space-y-3 p-5">
           <ul className="space-y-2 text-[14px] text-tinta-2">
             <li className="flex gap-2.5"><MapPin weight="fill" className="mt-0.5 size-[18px] shrink-0 text-grana" />
