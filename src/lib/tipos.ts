@@ -3,6 +3,8 @@ export type Modalidad = 'presencial' | 'virtual' | 'mixta'
 export type FaseEvento = 'borrador' | 'cancelado' | 'proximo' | 'en_curso' | 'finalizado'
 export type EstadoInscripcion = 'pendiente_pago' | 'confirmada' | 'cancelada' | 'expirada'
 export type MetodoPago = 'yape' | 'plin' | 'paypal'
+/** CAP-89 (HU-16): medios de pago con verificación manual de la administración. */
+export type MedioPagoManual = 'yape' | 'transferencia' | 'whatsapp'
 
 export interface Plan {
   codigo: 'basico' | 'pro' | 'enterprise'
@@ -94,13 +96,27 @@ export interface Inscripcion {
 export interface Pago {
   id: string
   inscripcion_id: string
-  metodo: MetodoPago
+  metodo: MetodoPago | MedioPagoManual
   monto: number
-  estado: 'procesando' | 'confirmado' | 'rechazado' | 'sin_respuesta' | 'reembolsado'
+  /** CAP-89: «por_verificar» mientras la administración revisa el comprobante (HU-16 CA-02). */
+  estado: 'procesando' | 'por_verificar' | 'confirmado' | 'rechazado' | 'sin_respuesta' | 'reembolsado'
   referencia_externa: string | null
   numero_comprobante: string | null
   mensaje: string | null
   creado_en: string
+  /** CAP-89 (HU-16 CA-02 a CA-04): número de operación, motivo del rechazo y fecha de la verificación. */
+  numero_operacion?: string | null
+  motivo_rechazo?: string | null
+  verificado_en?: string | null
+}
+
+/** CAP-89 (HU-16 CA-01): lo que devuelve medios_pago. Los campos coinciden con ConfigPagos del diseño (CAP-88). */
+export interface MediosPago {
+  config: {
+    yape_qr: string | null; yape_titular: string | null; banco: string | null
+    cuenta: string | null; cci: string | null; titular: string | null; whatsapp: string | null
+  }
+  disponibles: MedioPagoManual[]
 }
 
 export interface Ponente {

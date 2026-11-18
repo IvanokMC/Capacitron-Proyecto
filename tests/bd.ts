@@ -17,6 +17,7 @@ const MIGRACIONES = [
   '20261119000001_celular_usuario.sql', // CAP-99 (Carlos): celular con consentimiento
   '20261120000001_coordenadas_evento.sql', // CAP-104 (Carlos): latitud y longitud
   '20261121000001_imagenes_evento.sql', // CAP-109 (Carlos): flyer e imagen del lugar
+  '20261122000001_pagos_manuales.sql', // CAP-89 (Carlos): pagos manuales
 ].map((f) => readFileSync(new URL(`../supabase/migrations/${f}`, import.meta.url), 'utf8'))
 
 export class ErrorRpc extends Error {
