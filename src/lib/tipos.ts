@@ -55,6 +55,11 @@ export interface Evento {
   tiene_enlace: boolean
   enlace_plataforma: 'zoom' | 'meet' | 'teams' | null
   enlace_virtual?: string | null
+  /** CAP-78: datos públicos de la HU-02. `contacto` solo llega si el organizador autorizó mostrarlo. */
+  tipo: 'seminario' | 'congreso' | 'taller' | 'curso' | null
+  organizador_nombre: string | null
+  contacto_publico: boolean
+  contacto: string | null
   organizador_id: string
   organizador: string
   institucion: { id: string; nombre: string; siglas: string | null } | null
@@ -100,6 +105,24 @@ export interface SesionPrograma {
   inicio: string
   fin: string
   ponentes: { id: string; nombre: string }[]
+}
+
+/**
+ * CAP-80 (Carlos): parámetros que acepta `catalogo_eventos`; todos son opcionales y se combinan (HU-15).
+ * Es el contrato entre la base de datos y los filtros del catálogo (CAP-81): DIP, diap. 92–106.
+ */
+export interface FiltrosCatalogo {
+  q?: string
+  modalidad?: Modalidad | ''
+  precio?: 'gratis' | 'pago' | ''
+  incluir_pasados?: boolean
+  tipo?: NonNullable<Evento['tipo']> | ''
+  /** Fecha AAAA-MM-DD (hora de Lima); el evento debe iniciar ese día o después. */
+  desde?: string
+  /** Fecha AAAA-MM-DD (hora de Lima); el evento debe iniciar ese día o antes. */
+  hasta?: string
+  /** Parte del lugar, por ejemplo «Perayoc». */
+  ubicacion?: string
 }
 
 export interface EventoDetalle extends Evento {
