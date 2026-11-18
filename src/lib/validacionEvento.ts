@@ -1,0 +1,60 @@
+// Validación de los campos que exige publicar un evento (CAP-77, HU-02 CA-07).
+//
+// Rol: Frontend (José) · Tarea: CAP-77.
+// Teoría de Diseño de Software:
+// · SRP y cohesión (diap. 26–28 y 39–49): este módulo solo decide qué falta para publicar;
+//   la pantalla solo muestra los errores. Así la regla se prueba sin dibujar el formulario.
+// · Code smells / duplicación (diap. 33): la misma regla está en SQL
+//   (capa.campos_faltantes_publicacion); aquí se repite solo para avisar antes de enviar,
+//   y la API es la que manda si alguien se salta el formulario.
+
+export type TipoEvento = 'seminario' | 'congreso' | 'taller' | 'curso'
+
+export const TIPOS_EVENTO: { valor: TipoEvento; etiqueta: string }[] = [
+  { valor: 'seminario', etiqueta: 'Seminario' },
+  { valor: 'congreso', etiqueta: 'Congreso' },
+  { valor: 'taller', etiqueta: 'Taller' },
+  { valor: 'curso', etiqueta: 'Curso' },
+]
+
+/** CAP-78: etiqueta visible del tipo de evento; usa la misma lista que el formulario (diap. 33, sin duplicar). */
+export function etiquetaTipo(tipo: string | null | undefined): string | null {
+  return TIPOS_EVENTO.find((t) => t.valor === tipo)?.etiqueta ?? null
+}
+
+/** CAP-78: «quién organiza» en una línea: el nombre público elegido y, si hay, la institución. */
+export function textoOrganiza(e: { organizador_nombre: string | null; organizador: string; institucion: { nombre: string } | null }): string {
+  const quien = e.organizador_nombre ?? e.organizador
+  if (!e.institucion || e.institucion.nombre === quien) return quien
+  return `${quien} · ${e.institucion.nombre}`
+}
+
+export interface CamposPublicacion {
+  modalidad: string
+  tipo: string
+  lugar: string
+  organizador_nombre: string
+  contacto: string
+  /** CAP-105: si el formulario ya tiene el punto en el mapa. Sin dato (undefined), no se revisa. */
+  tienePunto?: boolean
+}
+
+export const MENSAJES_PUBLICACION: Record<'tipo' | 'lugar' | 'ubicacion' | 'organizador_nombre' | 'contacto', string> = {
+  tipo: 'Elige el tipo de evento.',
+  lugar: 'Indica el lugar del evento presencial o mixto.',
+  // CAP-105 (HU-19 CA-01): misma regla que la API (CAP-104, campo «ubicacion»).
+  ubicacion: 'Marca el lugar en el mapa: busca la dirección o toca el mapa.',
+  organizador_nombre: 'Escribe quién organiza el evento.',
+  contacto: 'Indica un correo o teléfono de contacto.',
+}
+
+/** Campos vacíos que impiden publicar, con su mensaje. Un evento virtual no necesita lugar. */
+export function faltantesParaPublicar(f: CamposPublicacion): Record<string, string> {
+  const faltan: Record<string, string> = {}
+  if (!f.tipo.trim()) faltan.tipo = MENSAJES_PUBLICACION.tipo
+  if (f.modalidad !== 'virtual' && !f.lugar.trim()) faltan.lugar = MENSAJES_PUBLICACION.lugar
+  if (f.modalidad !== 'virtual' && f.tienePunto === false) faltan.ubicacion = MENSAJES_PUBLICACION.ubicacion
+  if (!f.organizador_nombre.trim()) faltan.organizador_nombre = MENSAJES_PUBLICACION.organizador_nombre
+  if (!f.contacto.trim()) faltan.contacto = MENSAJES_PUBLICACION.contacto
+  return faltan
+}

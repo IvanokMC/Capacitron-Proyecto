@@ -3,6 +3,8 @@ export type Modalidad = 'presencial' | 'virtual' | 'mixta'
 export type FaseEvento = 'borrador' | 'cancelado' | 'proximo' | 'en_curso' | 'finalizado'
 export type EstadoInscripcion = 'pendiente_pago' | 'confirmada' | 'cancelada' | 'expirada'
 export type MetodoPago = 'yape' | 'plin' | 'paypal'
+/** CAP-89 (HU-16): medios de pago con verificación manual de la administración. */
+export type MedioPagoManual = 'yape' | 'transferencia' | 'whatsapp'
 
 export interface Plan {
   codigo: 'basico' | 'pro' | 'enterprise'
@@ -26,6 +28,12 @@ export interface Usuario {
   rol: Rol
   estado: string
   recordatorios_activos: boolean
+  /** CAP-94: ruta de la foto en el bucket de fotos (<id>/<archivo>); null = mostrar iniciales. */
+  foto_url: string | null
+  /** CAP-99: celular de 9 dígitos de la propia cuenta; null en cuentas creadas antes de la HU-18. */
+  celular: string | null
+  /** CAP-99: consentimiento para que los organizadores de sus eventos vean el celular (revocable). */
+  comparte_celular: boolean
   institucion: { id: string; nombre: string; siglas: string | null; estado: string; plan: Plan } | null
 }
 
@@ -37,6 +45,14 @@ export interface Evento {
   fecha_fin: string
   modalidad: Modalidad
   lugar: string | null
+  /** CAP-104: punto del lugar; null en eventos virtuales o publicados antes de la HU-19. */
+  latitud: number | null
+  longitud: number | null
+  /** CAP-109: rutas del flyer y de la imagen del lugar en el bucket de imágenes de eventos, con su texto alternativo. */
+  flyer_url: string | null
+  flyer_alt: string | null
+  imagen_lugar_url: string | null
+  imagen_lugar_alt: string | null
   cupo_maximo: number
   cupos_ocupados: number
   cupos_disponibles: number
@@ -53,6 +69,11 @@ export interface Evento {
   tiene_enlace: boolean
   enlace_plataforma: 'zoom' | 'meet' | 'teams' | null
   enlace_virtual?: string | null
+  /** CAP-78: datos públicos de la HU-02. `contacto` solo llega si el organizador autorizó mostrarlo. */
+  tipo: 'seminario' | 'congreso' | 'taller' | 'curso' | null
+  organizador_nombre: string | null
+  contacto_publico: boolean
+  contacto: string | null
   organizador_id: string
   organizador: string
   institucion: { id: string; nombre: string; siglas: string | null } | null
@@ -75,13 +96,27 @@ export interface Inscripcion {
 export interface Pago {
   id: string
   inscripcion_id: string
-  metodo: MetodoPago
+  metodo: MetodoPago | MedioPagoManual
   monto: number
-  estado: 'procesando' | 'confirmado' | 'rechazado' | 'sin_respuesta' | 'reembolsado'
+  /** CAP-89: «por_verificar» mientras la administración revisa el comprobante (HU-16 CA-02). */
+  estado: 'procesando' | 'por_verificar' | 'confirmado' | 'rechazado' | 'sin_respuesta' | 'reembolsado'
   referencia_externa: string | null
   numero_comprobante: string | null
   mensaje: string | null
   creado_en: string
+  /** CAP-89 (HU-16 CA-02 a CA-04): número de operación, motivo del rechazo y fecha de la verificación. */
+  numero_operacion?: string | null
+  motivo_rechazo?: string | null
+  verificado_en?: string | null
+}
+
+/** CAP-89 (HU-16 CA-01): lo que devuelve medios_pago. Los campos coinciden con ConfigPagos del diseño (CAP-88). */
+export interface MediosPago {
+  config: {
+    yape_qr: string | null; yape_titular: string | null; banco: string | null
+    cuenta: string | null; cci: string | null; titular: string | null; whatsapp: string | null
+  }
+  disponibles: MedioPagoManual[]
 }
 
 export interface Ponente {
@@ -98,6 +133,24 @@ export interface SesionPrograma {
   inicio: string
   fin: string
   ponentes: { id: string; nombre: string }[]
+}
+
+/**
+ * CAP-80 (Carlos): parámetros que acepta `catalogo_eventos`; todos son opcionales y se combinan (HU-15).
+ * Es el contrato entre la base de datos y los filtros del catálogo (CAP-81): DIP, diap. 92–106.
+ */
+export interface FiltrosCatalogo {
+  q?: string
+  modalidad?: Modalidad | ''
+  precio?: 'gratis' | 'pago' | ''
+  incluir_pasados?: boolean
+  tipo?: NonNullable<Evento['tipo']> | ''
+  /** Fecha AAAA-MM-DD (hora de Lima); el evento debe iniciar ese día o después. */
+  desde?: string
+  /** Fecha AAAA-MM-DD (hora de Lima); el evento debe iniciar ese día o antes. */
+  hasta?: string
+  /** Parte del lugar, por ejemplo «Perayoc». */
+  ubicacion?: string
 }
 
 export interface EventoDetalle extends Evento {

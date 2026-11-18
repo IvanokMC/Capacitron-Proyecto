@@ -10,10 +10,21 @@ import { ErrorApi } from '../lib/backend'
 import { BandaCupos, InsigniaFase, InsigniaInscripcion } from '../components/tejido'
 import { Aviso, Avatar, Boton, BotonEnlace, CargandoLista, Dialogo, Panel, Vacio } from '../components/ui'
 import { useNotas } from '../components/notificaciones'
+import { ContactoOrganizador } from '../components/ContactoOrganizador'
+import { BloqueUbicacion } from '../components/UbicacionEvento'
+import { MapaEvento } from '../components/MapaEvento'
+import { enlaceComoLlegar, puntoDe } from '../lib/mapa'
+import { etiquetaTipo, textoOrganiza } from '../lib/validacionEvento'
+import { FlyerEvento, ImagenLugar } from '../components/ImagenEvento'
+import { useUrlArchivo } from '../lib/almacenamiento'
+import { altImagen } from '../lib/imagenesEvento'
 
 export function EventoDetalle() {
   const { id } = useParams()
   const { datos: e, error, cargando, recargar } = useCarga<TEvento>('detalle_evento', { id })
+  // CAP-110 (José): direcciones del flyer y de la imagen del lugar (HU-20). Los hooks van antes de los return.
+  const urlFlyer = useUrlArchivo('eventos', e?.flyer_url)
+  const urlLugar = useUrlArchivo('eventos', e?.imagen_lugar_url)
 
   if (cargando && !e) return <CargandoLista filas={3} />
   if (error || !e) {
@@ -42,12 +53,15 @@ export function EventoDetalle() {
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <InsigniaFase fase={e.fase} />
-            <span className="text-[13px] text-tinta-3">{MODALIDAD[e.modalidad]} · {e.horas_academicas} horas académicas</span>
+            <span className="text-[13px] text-tinta-3">
+              {etiquetaTipo(e.tipo) && `${etiquetaTipo(e.tipo)} · `}{MODALIDAD[e.modalidad]} · {e.horas_academicas} horas académicas
+            </span>
           </div>
           <h1 className="mt-2 text-[28px] font-semibold leading-[1.15] sm:text-[36px]">{e.nombre}</h1>
           <p className="mt-3 flex items-center gap-2 text-[15px] text-tinta-2">
             <Buildings className="size-[18px] shrink-0 text-tinta-3" />
-            {e.institucion?.nombre ?? 'Organizador independiente'} · organiza {e.organizador}
+            {/* CAP-78: nombre público del organizador (HU-02 CA-06) */}
+            Organiza {textoOrganiza(e)}
           </p>
           <p className="mt-6 max-w-[68ch] whitespace-pre-line text-[16px] leading-relaxed text-tinta-2">{e.descripcion}</p>
 
@@ -55,8 +69,18 @@ export function EventoDetalle() {
           <Ponentes e={e} />
         </div>
 
-        <aside className="lg:sticky lg:top-[84px] lg:self-start">
+        <aside className="space-y-4 lg:sticky lg:top-[84px] lg:self-start">
+          {/* CAP-110: el flyer es lo primero de la columna, antes del botón de inscripción (HU-20 CA-01 y CA-03).
+              Se ve sin sesión: detalle_evento devuelve la ruta a cualquier visitante y el bucket es público. */}
+          <FlyerEvento src={urlFlyer} alt={altImagen(e.flyer_alt, `Flyer de ${e.nombre}`)} />
           <PanelAccion e={e} recargar={recargar} />
+          {/* CAP-105 (José): mapa con el punto, la dirección, la hora de inicio y «Cómo llegar» (HU-19 CA-02 y CA-03).
+              BloqueUbicacion no muestra nada en eventos virtuales (CA-04). */}
+          <BloqueUbicacion modalidad={e.modalidad} lugar={e.lugar} inicio={e.fecha_inicio}
+            mapa={puntoDe(e) && <MapaEvento punto={puntoDe(e)} etiqueta={`Mapa con la ubicación de ${e.lugar}`} />}
+            enlaceIndicaciones={puntoDe(e) && enlaceComoLlegar(puntoDe(e)!)}
+            imagen={urlLugar && <ImagenLugar src={urlLugar} alt={altImagen(e.imagen_lugar_alt, `Imagen del lugar: ${e.lugar}`)} />} />
+          {!e.es_organizador && <ContactoOrganizador e={e} />}
         </aside>
       </div>
     </div>
