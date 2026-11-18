@@ -9,6 +9,7 @@ import {
   AreaTexto, Aviso, Boton, BotonEnlace, Campo, CargandoLista, Cifra, Dialogo, Insignia, Panel, Pestanas, Vacio,
 } from '../../components/ui'
 import { useNotas } from '../../components/notificaciones'
+import { AvatarUsuario } from '../../components/AvatarUsuario'
 import { Programa } from './gestion/Programa'
 import { Asistencia } from './gestion/Asistencia'
 import { Certificados } from './gestion/Certificados'
@@ -19,7 +20,7 @@ export interface Gestion extends Evento {
   enlace_virtual: string | null
   tiene_inscripciones: boolean
   cupos: { total: number; ocupados: number; disponibles: number; confirmados: number; pendientes_pago: number; ofrecidos: number; en_espera: number }
-  inscritos: { id: string; nombre: string; correo: string; estado: 'confirmada' | 'pendiente_pago' | 'cancelada' | 'expirada'; creado_en: string; monto: number
+  inscritos: { id: string; nombre: string; correo: string; foto_url: string | null; estado: 'confirmada' | 'pendiente_pago' | 'cancelada' | 'expirada'; creado_en: string; monto: number
     reserva_expira_en: string | null; pago: string | null; jornadas_asistidas: number; total_jornadas: number }[]
   lista_espera: { id: string; nombre: string; correo: string; estado: 'esperando' | 'ofrecido'; solicitado_en: string; oferta_expira_en: string | null }[]
   plan: Plan
@@ -234,7 +235,13 @@ function TablaInscritos({ filas }: { filas: Gestion['inscritos'] }) {
         <tbody className="divide-y divide-linea">
           {filas.map((i) => (
             <tr key={i.id} className="hover:bg-fondo/50">
-              <td className="px-4 py-3"><p className="font-medium">{i.nombre}</p><p className="text-[13px] text-tinta-3">{i.correo}</p></td>
+              <td className="px-4 py-3">
+                {/* CAP-95: avatar de cada inscrito (estado 8 de CAP-93) */}
+                <div className="flex items-center gap-3">
+                  <AvatarUsuario nombre={i.nombre} ruta={i.foto_url} tamano="size-8" />
+                  <div className="min-w-0"><p className="font-medium">{i.nombre}</p><p className="text-[13px] text-tinta-3">{i.correo}</p></div>
+                </div>
+              </td>
               <td className="px-4 py-3"><InsigniaInscripcion estado={i.estado} /></td>
               <td className="px-4 py-3"><Jornadas asistidas={i.jornadas_asistidas} total={i.total_jornadas} /></td>
               <td className="px-4 py-3 text-tinta-2">{fechaHora(i.creado_en)}</td>

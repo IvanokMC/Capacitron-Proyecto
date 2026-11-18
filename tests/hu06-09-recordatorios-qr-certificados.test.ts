@@ -61,7 +61,9 @@ describe('HU-06 Recordatorios automáticos', () => {
     // Se posterga 3 días: el aviso de cambio llega y el recordatorio se vuelve a enviar con la nueva fecha.
     const nuevo = new Date(new Date(e.fecha_inicio).getTime() + 72 * 3600_000).toISOString()
     const fin = new Date(new Date(e.fecha_fin).getTime() + 72 * 3600_000).toISOString()
-    await bd.rpc('guardar_evento', { ...e, token: org, id: e.id, fecha_inicio: nuevo, fecha_fin: fin })
+    // Datos del organizador (evento_gestion), como el editor real (D-01, hallado en CAP-79; ajuste de CAP-78).
+    const g = await bd.rpc('evento_gestion', { token: org, id: e.id })
+    await bd.rpc('guardar_evento', { ...g, token: org, id: e.id, fecha_inicio: nuevo, fecha_fin: fin })
     expect(await asuntos('ana@test.pe')).toContain('Cambios en Charla')
     await bd.adelantar(72 * 60)
     await bd.rpc('procesar_tareas')
