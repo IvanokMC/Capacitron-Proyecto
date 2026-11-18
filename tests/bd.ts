@@ -9,6 +9,7 @@ const MIGRACIONES = [
   '20261005000003_funciones_operacion.sql',
   '20261005000004_demo.sql',
   '20261005000006_endurecimiento.sql',
+  '20261109000001_campos_evento.sql',
 ].map((f) => readFileSync(new URL(`../supabase/migrations/${f}`, import.meta.url), 'utf8'))
 
 export class ErrorRpc extends Error {
