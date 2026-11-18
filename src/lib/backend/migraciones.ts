@@ -25,6 +25,8 @@ import pagosManuales from '../../../supabase/migrations/20261122000001_pagos_man
 import bucketComprobantes from '../../../supabase/migrations/20261122000002_bucket_comprobantes.sql?raw'
 // CAP-102 (George): celulares de ejemplo en la demo (HU-18)
 import demoCelulares from '../../../supabase/migrations/20261123000001_demo_celulares.sql?raw'
+// CAP-114 (George): un ejemplo de cada función del Sprint 2 para mostrar el sistema
+import ejemplosSprint2 from '../../../supabase/migrations/20261124000001_ejemplos_sprint2.sql?raw'
 
 interface Ejecutor {
   exec(sql: string): Promise<unknown>
@@ -54,7 +56,7 @@ exception when others then
 end $$;
 `
 
-const SQL = [esquema, funcionesBase, funcionesOperacion, demo, endurecimiento, camposEvento, validacionesEvento, fotoUsuario, camposPublicos, busquedaCatalogo, celularUsuario, coordenadasEvento, imagenesEvento, pagosManuales, bucketComprobantes, demoCelulares, RPC_LOCAL]
+const SQL = [esquema, funcionesBase, funcionesOperacion, demo, endurecimiento, camposEvento, validacionesEvento, fotoUsuario, camposPublicos, busquedaCatalogo, celularUsuario, coordenadasEvento, imagenesEvento, pagosManuales, bucketComprobantes, demoCelulares, ejemplosSprint2, RPC_LOCAL]
 
 /** Huella del SQL: si cambia una migración, la base local se recrea. */
 export const VERSION_SQL = (() => {
@@ -92,6 +94,8 @@ export async function recrear(db: Ejecutor) {
     insert into capa.meta values ('version_sql', '${VERSION_SQL}');
   `)
   await db.query('select capa.sembrar_demo()')
+  // CAP-114: ejemplos del Sprint 2 (fuera de sembrar_demo para que las pruebas de cada tarea vean la demo base).
+  await db.query('select capa.sembrar_ejemplos()')
 }
 
 export async function migrar(db: Ejecutor) {

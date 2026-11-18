@@ -19,5 +19,7 @@ update capa.config set reloj_offset = interval '0', actualizado_en = now() where
 alter sequence capa.comprobante_seq restart with 1001;
 
 select capa.sembrar_demo();
+-- CAP-114: un ejemplo de cada función del Sprint 2 (eventos próximos, mapa, flyer, fotos, celulares y pagos).
+select capa.sembrar_ejemplos();
 
 commit;

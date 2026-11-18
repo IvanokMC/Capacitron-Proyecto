@@ -78,10 +78,11 @@ Antes del archivo 0005, activa la extensión **pg_cron** en *Database → Extens
 | `20261122000001_pagos_manuales.sql` | CAP-89 · HU-16 | Pagos con verificación de la administración y datos de pago de la organización |
 | `20261122000002_bucket_comprobantes.sql` | CAP-92 · HU-16 | Bucket privado `comprobantes` y regla de acceso a cada captura |
 | `20261123000001_demo_celulares.sql` | CAP-102 · HU-18 | Celulares de ejemplo en la demostración |
+| `20261124000001_ejemplos_sprint2.sql` | CAP-114 · HU-02 a HU-20 | Un ejemplo de cada función del Sprint 2 (`capa.sembrar_ejemplos()`) |
 
 Después, despliega la Edge Function de los comprobantes: `supabase functions deploy url-comprobante`.
 
-**Estado del proyecto `bdjftrlubrnterncjuft` (18/11/2026):** tiene todo el Sprint 1 (0001 a 0006) y, del Sprint 2, `campos_evento`, `bucket_fotos` y `bucket_eventos`. Faltan las demás migraciones del Sprint 2 y la Edge Function `url-comprobante`.
+**Estado del proyecto `bdjftrlubrnterncjuft` (18/11/2026):** tiene todas las migraciones del Sprint 1 y del Sprint 2, la Edge Function `url-comprobante` y los ejemplos con sus imágenes en Supabase Storage.
 
 Otros archivos SQL:
 
@@ -100,7 +101,7 @@ npm run dev        # http://localhost:5173
 Con `.env.local` se conecta a Supabase. Bórralo (o vacía sus variables) para usar el modo local con PGlite.
 
 ```bash
-npm test                     # 554 pruebas de los criterios de aceptación contra el SQL real (PGlite)
+npm test                     # 561 pruebas de los criterios de aceptación contra el SQL real (PGlite)
 npx tsc --noEmit             # revisión de tipos (la misma que corre el CI)
 npm run build                # compila a dist/
 npm run e2e                  # recorrido en Chrome (requiere `npx vite preview --port 4173` y Chrome instalado)
@@ -123,6 +124,8 @@ Contraseña de todas: `Capacitron2026`. Todos los datos son ficticios.
 | `admin@capacitron.demo` | Administración |
 
 La demo trae un evento terminado (con certificados, uno revocado, y encuesta abierta), uno en curso (para escanear QR), uno lleno con lista de espera, un curso de pago, un webinar virtual que empieza en unas 26 horas y un borrador. Desde CAP-102, cinco cuentas de ejemplo tienen celular (ficticio) para ver la HU-18 en la lista de inscritos.
+
+**Ejemplos del Sprint 2 (CAP-114):** 4 eventos próximos de ejemplo (congreso y taller de pago, seminario mixto y curso virtual) con flyer, imagen del lugar y punto en el mapa; fotos de perfil ilustradas; datos de pago de ejemplo (QR de Yape que no recibe pagos, banco y WhatsApp); 2 pagos por verificar y 1 aprobado. Para probarlos: entra como `admin@capacitron.demo` → Administración → Pagos, o como `estudiante@capacitron.demo` → Mis inscripciones. Todo está marcado como ejemplo; el detalle está en [docs/tareas/CAP-114-ejemplos-sprint2.md](docs/tareas/CAP-114-ejemplos-sprint2.md).
 
 **Reloj de demostración:** en *Administración → Demostración* puedes adelantar la hora del sistema para ver recordatorios (24 h y 1 h antes), el vencimiento de pagos (30 min) y de cupos ofrecidos (24 h), la emisión de certificados y el cierre de encuestas (7 días). En Supabase este reloj afecta a todos los usuarios.
 
