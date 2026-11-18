@@ -21,6 +21,8 @@ import coordenadasEvento from '../../../supabase/migrations/20261120000001_coord
 import imagenesEvento from '../../../supabase/migrations/20261121000001_imagenes_evento.sql?raw'
 // CAP-89 (Carlos): pagos manuales con verificación de la administración
 import pagosManuales from '../../../supabase/migrations/20261122000001_pagos_manuales.sql?raw'
+// CAP-92 (George): quién puede ver un comprobante (el bucket privado solo existe en Supabase)
+import bucketComprobantes from '../../../supabase/migrations/20261122000002_bucket_comprobantes.sql?raw'
 
 interface Ejecutor {
   exec(sql: string): Promise<unknown>
@@ -50,7 +52,7 @@ exception when others then
 end $$;
 `
 
-const SQL = [esquema, funcionesBase, funcionesOperacion, demo, endurecimiento, camposEvento, validacionesEvento, fotoUsuario, camposPublicos, busquedaCatalogo, celularUsuario, coordenadasEvento, imagenesEvento, pagosManuales, RPC_LOCAL]
+const SQL = [esquema, funcionesBase, funcionesOperacion, demo, endurecimiento, camposEvento, validacionesEvento, fotoUsuario, camposPublicos, busquedaCatalogo, celularUsuario, coordenadasEvento, imagenesEvento, pagosManuales, bucketComprobantes, RPC_LOCAL]
 
 /** Huella del SQL: si cambia una migración, la base local se recrea. */
 export const VERSION_SQL = (() => {

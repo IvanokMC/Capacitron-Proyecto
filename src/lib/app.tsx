@@ -2,24 +2,8 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { backend, ErrorApi, type Backend } from './backend'
 import type { Usuario } from './tipos'
 
-const CLAVE_TOKEN = 'capacitron.token'
-
-function leerToken() {
-  try {
-    return localStorage.getItem(CLAVE_TOKEN)
-  } catch {
-    return null
-  }
-}
-
-function guardarToken(t: string | null) {
-  try {
-    if (t) localStorage.setItem(CLAVE_TOKEN, t)
-    else localStorage.removeItem(CLAVE_TOKEN)
-  } catch {
-    /* almacenamiento no disponible: la sesión dura lo que dure la pestaña */
-  }
-}
+// CAP-92: el token se guarda con lib/sesion.ts (también lo usa el almacenamiento para los comprobantes).
+import { guardarToken, leerToken } from './sesion'
 
 interface EstadoSistema {
   ahora: string

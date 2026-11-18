@@ -44,6 +44,11 @@ export interface ReglasArchivo {
   nombre: string
   /** Formatos en palabras para el mensaje de tipo no permitido. */
   formatos: string
+  /**
+   * CAP-92: true si el bucket es privado. En Supabase no se lee con una dirección pública sino con un enlace firmado
+   * que autoriza la base de datos (Edge Function «url-comprobante»). OCP: un bucket privado nuevo es esta marca.
+   */
+  privado?: boolean
 }
 
 /** Reglas por bucket. Las de fotos son las de la HU-17 (CA-01 y CA-02) y coinciden con el bucket en Supabase. */
@@ -62,13 +67,13 @@ export const REGLAS: Record<Bucket, ReglasArchivo> = {
     formatos: 'JPG, PNG o WEBP',
   },
   // CAP-90 (HU-16 CA-02): captura del comprobante de pago, hasta 3 MB como pide el diseño (CAP-88). Es un dato
-  // personal: en Supabase va en un bucket privado y se lee con un enlace firmado, que prepara CAP-92 (George).
-  // Mientras tanto funciona completo en modo local; en Supabase, url() de este bucket todavía no sirve para mostrarla.
+  // personal: en Supabase va en un bucket privado y se lee con un enlace firmado (CAP-92, George).
   comprobantes: {
     tipos: { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' },
     maxBytes: 3 * 1024 * 1024,
     nombre: 'La captura',
     formatos: 'JPG, PNG o WEBP',
+    privado: true, // CAP-92: bucket privado en Supabase (migración 20261122000002_bucket_comprobantes.sql)
   },
 }
 

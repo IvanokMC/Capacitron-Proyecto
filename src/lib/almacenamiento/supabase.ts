@@ -1,6 +1,11 @@
 // Implementación con Supabase Storage (CAP-97). Recibe el cliente ya creado: así las pruebas usan
 // uno falso y este archivo no lee variables de entorno (DIP, diap. 92–106).
-import { ErrorAlmacenamiento, type Almacenamiento, type Bucket } from './contrato'
+// CAP-92: los buckets privados (REGLAS[b].privado) no tienen dirección pública; su url() pide un enlace firmado a la
+// función `firmar`, que se recibe como dependencia (la arma index.ts con la Edge Function «url-comprobante»).
+import { ErrorAlmacenamiento, REGLAS, type Almacenamiento, type Bucket } from './contrato'
+
+/** Pide un enlace firmado y de corta duración para un archivo privado; null si la sesión no puede verlo. */
+export type FirmarPrivado = (bucket: Bucket, ruta: string) => Promise<string | null>
 
 /** Lo mínimo del cliente de Supabase que se usa. El cliente real de @supabase/supabase-js lo cumple. */
 export interface ClienteStorage {
@@ -13,7 +18,7 @@ export interface ClienteStorage {
   }
 }
 
-export function almacenamientoSupabase(cliente: ClienteStorage): Almacenamiento {
+export function almacenamientoSupabase(cliente: ClienteStorage, firmar?: FirmarPrivado): Almacenamiento {
   return {
     modo: 'supabase',
     async subir(bucket: Bucket, ruta: string, archivo: Blob) {
@@ -25,6 +30,8 @@ export function almacenamientoSupabase(cliente: ClienteStorage): Almacenamiento 
       return ruta
     },
     async url(bucket: Bucket, ruta: string) {
+      // Un archivo privado nunca se pide con la dirección pública (no funcionaría y la dejaría a la vista).
+      if (REGLAS[bucket].privado) return firmar ? firmar(bucket, ruta).catch(() => null) : null
       return cliente.storage.from(bucket).getPublicUrl(ruta).data.publicUrl
     },
   }
