@@ -10,6 +10,8 @@ import { ErrorApi } from '../lib/backend'
 import { BandaCupos, InsigniaFase, InsigniaInscripcion } from '../components/tejido'
 import { Aviso, Avatar, Boton, BotonEnlace, CargandoLista, Dialogo, Panel, Vacio } from '../components/ui'
 import { useNotas } from '../components/notificaciones'
+import { ContactoOrganizador } from '../components/ContactoOrganizador'
+import { etiquetaTipo, textoOrganiza } from '../lib/validacionEvento'
 
 export function EventoDetalle() {
   const { id } = useParams()
@@ -42,12 +44,15 @@ export function EventoDetalle() {
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <InsigniaFase fase={e.fase} />
-            <span className="text-[13px] text-tinta-3">{MODALIDAD[e.modalidad]} · {e.horas_academicas} horas académicas</span>
+            <span className="text-[13px] text-tinta-3">
+              {etiquetaTipo(e.tipo) && `${etiquetaTipo(e.tipo)} · `}{MODALIDAD[e.modalidad]} · {e.horas_academicas} horas académicas
+            </span>
           </div>
           <h1 className="mt-2 text-[28px] font-semibold leading-[1.15] sm:text-[36px]">{e.nombre}</h1>
           <p className="mt-3 flex items-center gap-2 text-[15px] text-tinta-2">
             <Buildings className="size-[18px] shrink-0 text-tinta-3" />
-            {e.institucion?.nombre ?? 'Organizador independiente'} · organiza {e.organizador}
+            {/* CAP-78: nombre público del organizador (HU-02 CA-06) */}
+            Organiza {textoOrganiza(e)}
           </p>
           <p className="mt-6 max-w-[68ch] whitespace-pre-line text-[16px] leading-relaxed text-tinta-2">{e.descripcion}</p>
 
@@ -55,8 +60,9 @@ export function EventoDetalle() {
           <Ponentes e={e} />
         </div>
 
-        <aside className="lg:sticky lg:top-[84px] lg:self-start">
+        <aside className="space-y-4 lg:sticky lg:top-[84px] lg:self-start">
           <PanelAccion e={e} recargar={recargar} />
+          {!e.es_organizador && <ContactoOrganizador e={e} />}
         </aside>
       </div>
     </div>

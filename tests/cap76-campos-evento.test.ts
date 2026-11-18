@@ -14,7 +14,10 @@ const actualizar = (campo: string, valor: unknown) =>
 
 describe('CAP-76 Campos tipo, organizador, contacto y consentimiento', () => {
   it('un evento sin los campos nuevos se sigue guardando y no tiene consentimiento', async () => {
-    const [e] = await bd.sql(`select tipo, organizador_nombre, contacto, contacto_consentimiento from capa.eventos where id = $1`, [id])
+    // CAP-77: el ayudante de pruebas ahora llena estos campos para poder publicar; aquí se guarda un borrador sin ellos.
+    const { token } = await bd.organizador('org2@test.pe')
+    const borrador = await bd.evento(token, { tipo: null, organizador_nombre: null, contacto: null }, 'borrador')
+    const [e] = await bd.sql(`select tipo, organizador_nombre, contacto, contacto_consentimiento from capa.eventos where id = $1`, [borrador.id])
     expect(e).toEqual({ tipo: null, organizador_nombre: null, contacto: null, contacto_consentimiento: false })
   })
 
