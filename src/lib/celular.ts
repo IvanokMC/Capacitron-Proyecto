@@ -44,6 +44,13 @@ export function validarCelularPerfil(valor: string, celularGuardado: string | nu
  */
 export function enlaceWhatsapp(celular: string, nombre: string, evento: string): string {
   const primerNombre = nombre.trim().split(/\s+/)[0] ?? ''
-  const texto = `Hola ${primerNombre}, te escribo por el evento «${evento}» de CAPACITRON.`
+  return enlaceWa(celular, `Hola ${primerNombre}, te escribo por el evento «${evento}» de CAPACITRON.`)
+}
+
+/**
+ * CAP-90: enlace wa.me con un mensaje cualquiera. Lo usan el contacto con el asistente (CAP-100) y el pago por
+ * WhatsApp (HU-16 CA-01): una sola forma de armar el enlace (code smells / duplicación, diap. 33).
+ */
+export function enlaceWa(celular: string, texto: string): string {
   return `https://wa.me/51${limpiarCelular(celular)}?text=${encodeURIComponent(texto)}`
 }

@@ -11,10 +11,10 @@
 //   Borrar se agregará cuando una historia lo necesite.
 
 /**
- * Buckets conocidos. CAP-112 suma «eventos» (flyer e imagen del lugar, HU-20). HU-16 agregará los comprobantes.
+ * Buckets conocidos. CAP-112 suma «eventos» (flyer e imagen del lugar, HU-20) y CAP-90 «comprobantes» (HU-16).
  * OCP (diap. 50–63): un bucket nuevo es una entrada aquí y en REGLAS; las implementaciones no cambian.
  */
-export type Bucket = 'fotos' | 'eventos'
+export type Bucket = 'fotos' | 'eventos' | 'comprobantes'
 
 export interface Almacenamiento {
   readonly modo: 'local' | 'supabase'
@@ -59,6 +59,15 @@ export const REGLAS: Record<Bucket, ReglasArchivo> = {
     tipos: { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' },
     maxBytes: 3 * 1024 * 1024,
     nombre: 'La imagen',
+    formatos: 'JPG, PNG o WEBP',
+  },
+  // CAP-90 (HU-16 CA-02): captura del comprobante de pago, hasta 3 MB como pide el diseño (CAP-88). Es un dato
+  // personal: en Supabase va en un bucket privado y se lee con un enlace firmado, que prepara CAP-92 (George).
+  // Mientras tanto funciona completo en modo local; en Supabase, url() de este bucket todavía no sirve para mostrarla.
+  comprobantes: {
+    tipos: { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' },
+    maxBytes: 3 * 1024 * 1024,
+    nombre: 'La captura',
     formatos: 'JPG, PNG o WEBP',
   },
 }

@@ -4,21 +4,6 @@ import funcionesBase from '../../../supabase/migrations/20261005000002_funciones
 import funcionesOperacion from '../../../supabase/migrations/20261005000003_funciones_operacion.sql?raw'
 import demo from '../../../supabase/migrations/20261005000004_demo.sql?raw'
 import endurecimiento from '../../../supabase/migrations/20261005000006_endurecimiento.sql?raw'
-// Sprint 2 · CAP-76 (campos del evento) y CAP-77 (validaciones). Antes solo estaban en la base de pruebas.
-import camposEvento from '../../../supabase/migrations/20261109000001_campos_evento.sql?raw'
-import validacionesEvento from '../../../supabase/migrations/20261116000001_validaciones_evento.sql?raw'
-// CAP-94 (Carlos): foto del usuario
-import fotoUsuario from '../../../supabase/migrations/20261116000002_foto_usuario.sql?raw'
-// CAP-78 (José): campos públicos del evento y formulario de contacto
-import camposPublicos from '../../../supabase/migrations/20261117000001_campos_publicos_evento.sql?raw'
-// CAP-80 (Carlos): búsqueda del catálogo por tipo, fechas y ubicación
-import busquedaCatalogo from '../../../supabase/migrations/20261118000001_busqueda_catalogo.sql?raw'
-// CAP-99 (Carlos): celular del usuario con consentimiento
-import celularUsuario from '../../../supabase/migrations/20261119000001_celular_usuario.sql?raw'
-// CAP-104 (Carlos): latitud y longitud del evento
-import coordenadasEvento from '../../../supabase/migrations/20261120000001_coordenadas_evento.sql?raw'
-// CAP-109 (Carlos): flyer e imagen del lugar del evento
-import imagenesEvento from '../../../supabase/migrations/20261121000001_imagenes_evento.sql?raw'
 
 interface Ejecutor {
   exec(sql: string): Promise<unknown>
@@ -48,7 +33,7 @@ exception when others then
 end $$;
 `
 
-const SQL = [esquema, funcionesBase, funcionesOperacion, demo, endurecimiento, camposEvento, validacionesEvento, fotoUsuario, camposPublicos, busquedaCatalogo, celularUsuario, coordenadasEvento, imagenesEvento, RPC_LOCAL]
+const SQL = [esquema, funcionesBase, funcionesOperacion, demo, endurecimiento, RPC_LOCAL]
 
 /** Huella del SQL: si cambia una migración, la base local se recrea. */
 export const VERSION_SQL = (() => {
