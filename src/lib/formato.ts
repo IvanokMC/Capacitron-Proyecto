@@ -58,7 +58,8 @@ const fmtNum = new Intl.NumberFormat('es-PE')
 export const num = (n: number) => fmtNum.format(n)
 
 export const MODALIDAD: Record<string, string> = { presencial: 'Presencial', virtual: 'Virtual', mixta: 'Mixta' }
-export const METODO: Record<string, string> = { yape: 'Yape', plin: 'Plin', paypal: 'PayPal' }
+// CAP-90 (José, HU-16): nombres de los medios de pago manuales (transferencia y WhatsApp).
+export const METODO: Record<string, string> = { yape: 'Yape', plin: 'Plin', paypal: 'PayPal', transferencia: 'Transferencia', whatsapp: 'WhatsApp' }
 export const PLATAFORMA: Record<string, string> = { zoom: 'Zoom', meet: 'Google Meet', teams: 'Microsoft Teams' }
 export const ROL: Record<string, string> = {
   asistente: 'Asistente', organizador: 'Organizador', ponente: 'Ponente', admin: 'Administración',
@@ -76,6 +77,9 @@ export function relativo(v: string | Date, ahora: Date) {
   else txt = `${Math.round(min / 1440)} días`
   return diff > 0 ? `en ${txt}` : `hace ${txt}`
 }
+
+/** CAP-98: celular en grupos de tres para leerlo mejor («984 123 456»). Si no tiene 9 dígitos, se deja como está. */
+export const celular = (c: string) => (/^\d{9}$/.test(c) ? `${c.slice(0, 3)} ${c.slice(3, 6)} ${c.slice(6)}` : c)
 
 export function iniciales(nombre: string) {
   return nombre

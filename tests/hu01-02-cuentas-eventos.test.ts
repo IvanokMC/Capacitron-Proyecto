@@ -6,7 +6,7 @@ beforeEach(async () => { bd = await nuevaBd() })
 
 const registro = (extra: Record<string, unknown> = {}) => ({
   nombres: 'Ana', apellidos: 'Huamán', correo: 'ana@test.pe', password: 'Clave2026x', rol: 'asistente',
-  acepta_privacidad: true, ...extra,
+  acepta_privacidad: true, celular: '984123456', ...extra, // CAP-99: celular obligatorio
 })
 
 describe('HU-01 Registro de usuarios', () => {
@@ -123,7 +123,10 @@ describe('HU-02 Crear evento', () => {
   it('CA-05 sin inscritos, la edición se guarda y se refleja en el catálogo', async () => {
     const { token } = await bd.organizador('org@test.pe')
     const e = await bd.evento(token)
-    await bd.rpc('guardar_evento', { ...e, token, id: e.id, nombre: 'Nombre corregido', cupo_maximo: 15, costo: 5 })
+    // Se edita con los datos que ve el organizador (evento_gestion), como el editor real: la vista pública no trae
+    // el contacto privado y reenviarla lo borraría (D-01, hallado en CAP-79; ajuste de CAP-78).
+    const g = await bd.rpc('evento_gestion', { token, id: e.id })
+    await bd.rpc('guardar_evento', { ...g, token, id: e.id, nombre: 'Nombre corregido', cupo_maximo: 15, costo: 5 })
     const [c] = await bd.rpc('catalogo_eventos')
     expect(c).toMatchObject({ nombre: 'Nombre corregido', cupo_maximo: 15, costo: 5 })
   })
