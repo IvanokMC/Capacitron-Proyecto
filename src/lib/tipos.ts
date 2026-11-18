@@ -28,13 +28,10 @@ export interface Usuario {
   recordatorios_activos: boolean
   /** CAP-94: ruta de la foto en el bucket de fotos (<id>/<archivo>); null = mostrar iniciales. */
   foto_url: string | null
-<<<<<<< HEAD
-=======
   /** CAP-99: celular de 9 dígitos de la propia cuenta; null en cuentas creadas antes de la HU-18. */
   celular: string | null
   /** CAP-99: consentimiento para que los organizadores de sus eventos vean el celular (revocable). */
   comparte_celular: boolean
->>>>>>> origin/feature/CAP-99-celular-bd
   institucion: { id: string; nombre: string; siglas: string | null; estado: string; plan: Plan } | null
 }
 
@@ -46,6 +43,9 @@ export interface Evento {
   fecha_fin: string
   modalidad: Modalidad
   lugar: string | null
+  /** CAP-104: punto del lugar; null en eventos virtuales o publicados antes de la HU-19. */
+  latitud: number | null
+  longitud: number | null
   cupo_maximo: number
   cupos_ocupados: number
   cupos_disponibles: number

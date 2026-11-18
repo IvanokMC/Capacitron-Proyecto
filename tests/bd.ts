@@ -9,15 +9,7 @@ const MIGRACIONES = [
   '20261005000003_funciones_operacion.sql',
   '20261005000004_demo.sql',
   '20261005000006_endurecimiento.sql',
-  '20261109000001_campos_evento.sql', // CAP-76 (José): tipo, organizador, contacto y consentimiento
-  '20261116000001_validaciones_evento.sql', // CAP-77 (José): validaciones al publicar
-  '20261116000002_foto_usuario.sql', // CAP-94 (Carlos): foto del usuario
-  '20261117000001_campos_publicos_evento.sql', // CAP-78 (José): campos públicos y contacto
-  '20261118000001_busqueda_catalogo.sql', // CAP-80 (Carlos): búsqueda del catálogo
-<<<<<<< HEAD
-=======
-  '20261119000001_celular_usuario.sql', // CAP-99 (Carlos): celular con consentimiento
->>>>>>> origin/feature/CAP-99-celular-bd
+  '20261109000001_campos_evento.sql',
 ].map((f) => readFileSync(new URL(`../supabase/migrations/${f}`, import.meta.url), 'utf8'))
 
 export class ErrorRpc extends Error {
@@ -98,10 +90,7 @@ export async function nuevaBd({ demo = false } = {}) {
     const r = await rpc('guardar_evento', {
       token, nombre: 'Evento de prueba', descripcion: 'Descripción', fecha_inicio: h(inicioH),
       fecha_fin: h(inicioH + duracionH), modalidad: 'presencial', lugar: 'Aula 1', cupo_maximo: 10, costo: 0,
-      horas_academicas: 3,
-      // CAP-77: datos que exige publicar (CA-07); cada prueba puede reemplazarlos en `extra`
-      tipo: 'taller', organizador_nombre: 'Organización de prueba', contacto: 'eventos@test.pe',
-      accion, ...resto,
+      horas_academicas: 3, accion, ...resto,
     })
     return r.evento as any
   }
