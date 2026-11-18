@@ -24,7 +24,11 @@ beforeAll(async () => {
     t[k] = await entra(c)
   }
   // La persona con un certificado válido también tiene celular y permiso: así se revisa la verificación pública.
-  const [cert] = await bd.sql<{ codigo: string; usuario_id: string }>(`select codigo, usuario_id from capa.certificados where estado = 'valido' limit 1`)
+  // Se elige siempre la misma (order by) y nunca sofia.chavez, que la primera prueba exige sin celular. Antes, con
+  // «limit 1» sin orden, Postgres podía devolverla a ella y la prueba fallaba a veces (diap. 140: pruebas repetibles).
+  const [cert] = await bd.sql<{ codigo: string; usuario_id: string }>(`select c.codigo, c.usuario_id from capa.certificados c
+    join capa.usuarios u on u.id = c.usuario_id
+    where c.estado = 'valido' and u.correo <> 'sofia.chavez@capacitron.demo' order by c.codigo limit 1`)
   codigoCertificado = cert.codigo
   await bd.sql(`update capa.usuarios set celular = '900000199', comparte_celular = true, celular_consentido_en = now() where id = $1 and celular is null`, [cert.usuario_id])
   numeros = (await bd.sql<{ celular: string }>(`select celular from capa.usuarios where celular is not null`)).map((r) => r.celular)
