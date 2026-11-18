@@ -6,7 +6,7 @@ beforeEach(async () => { bd = await nuevaBd() })
 
 const registro = (extra: Record<string, unknown> = {}) => ({
   nombres: 'Ana', apellidos: 'Huamán', correo: 'ana@test.pe', password: 'Clave2026x', rol: 'asistente',
-  acepta_privacidad: true, ...extra,
+  acepta_privacidad: true, celular: '984123456', ...extra, // CAP-99: celular obligatorio
 })
 
 describe('HU-01 Registro de usuarios', () => {
