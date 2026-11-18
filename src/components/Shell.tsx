@@ -4,6 +4,7 @@ import { Bell, Clock, List, SignOut, UserCircle, X, CaretDown, Tray } from '@pho
 import { useApp } from '../lib/app'
 import { ROL } from '../lib/formato'
 import { Marca } from './tejido'
+import { AvatarUsuario } from './AvatarUsuario'
 import { cx } from './ui'
 
 interface ItemNav { to: string; texto: string; fin?: boolean }
@@ -162,9 +163,8 @@ function MenuUsuario() {
     <div ref={ref} className="relative">
       <button onClick={() => setAbierto((v) => !v)} aria-expanded={abierto} aria-haspopup="menu"
         className="flex items-center gap-2 rounded-lg py-1.5 pl-1.5 pr-2 text-white/90 hover:bg-white/10">
-        <span className="grid size-8 place-items-center rounded-lg bg-white/15 text-[13px] font-semibold">
-          {usuario.nombres[0]}{usuario.apellidos[0]}
-        </span>
+        {/* CAP-95: foto o iniciales en el menú, sobre el fondo granate (estado 7 de CAP-93) */}
+        <AvatarUsuario nombre={usuario.nombre_completo} ruta={usuario.foto_url} tamano="size-8" tono="oscuro" alt="Tu foto de perfil" />
         <CaretDown className="hidden size-3.5 sm:block" weight="bold" />
       </button>
       {abierto && (

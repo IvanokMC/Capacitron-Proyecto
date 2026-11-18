@@ -4,7 +4,8 @@ import { Check, CheckCircle, EnvelopeSimple, Eye, EyeSlash, Lock, Tray, WarningC
 import { useApp, useCarga } from '../lib/app'
 import { ErrorApi } from '../lib/backend'
 import type { Usuario } from '../lib/tipos'
-import { Aviso, Boton, BotonEnlace, Campo, Casilla, cx, Dialogo, Entrada, Panel, Selector } from '../components/ui'
+import { Aviso, Boton, BotonEnlace, Campo, CampoCelular, Casilla, cx, Dialogo, Entrada, Panel, Selector } from '../components/ui'
+import { limpiarCelular, validarCelular } from '../lib/celular'
 import { useNotas } from '../components/notificaciones'
 
 function inicioSegunRol(u: Usuario) {
@@ -155,8 +156,10 @@ export function Registro() {
   const { api, sistema, usuario } = useApp()
   const navegar = useNavigate()
   const { datos: instituciones } = useCarga<{ id: string; nombre: string; siglas: string | null }[]>('instituciones_publicas')
-  const [f, setF] = useState({ nombres: '', apellidos: '', correo: '', password: '', rol: 'asistente', institucion_id: '' })
+  const [f, setF] = useState({ nombres: '', apellidos: '', correo: '', password: '', rol: 'asistente', institucion_id: '', celular: '' })
   const [acepta, setAcepta] = useState(false)
+  // CAP-100 (José): consentimiento explícito para compartir el celular; empieza sin marcar (HU-18 CA-02).
+  const [comparteCelular, setComparteCelular] = useState(false)
   const [errores, setErrores] = useState<Record<string, string>>({})
   const [general, setGeneral] = useState<string | null>(null)
   const [enviando, setEnviando] = useState(false)
@@ -181,6 +184,9 @@ export function Registro() {
     if (!f.nombres.trim()) e.nombres = 'Escribe tus nombres.'
     if (!f.apellidos.trim()) e.apellidos = 'Escribe tus apellidos.'
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(f.correo.trim())) e.correo = 'Ingresa un correo válido, por ejemplo nombre@universidad.edu.pe.'
+    // CAP-100: HU-18 CA-01, celular obligatorio en las cuentas nuevas, con la misma regla que la API.
+    const errCelular = validarCelular(f.celular, true)
+    if (errCelular) e.celular = errCelular
     if (!largo || !letrasNumeros) e.password = 'Usa al menos 8 caracteres y combina letras y números.'
     if (f.rol === 'organizador' && !f.institucion_id) e.institucion_id = 'Elige la institución que organiza tus eventos.'
     if (!acepta) e.acepta_privacidad = 'Necesitamos tu aceptación para crear la cuenta.'
@@ -198,7 +204,10 @@ export function Registro() {
     }
     setEnviando(true)
     try {
-      await api('registrar_usuario', { ...f, institucion_id: f.institucion_id || null, acepta_privacidad: acepta })
+      await api('registrar_usuario', {
+        ...f, institucion_id: f.institucion_id || null, acepta_privacidad: acepta,
+        celular: limpiarCelular(f.celular), comparte_celular: comparteCelular,
+      })
       setListo(f.correo.trim().toLowerCase())
     } catch (err) {
       if (err instanceof ErrorApi && err.campos.length) {
@@ -270,6 +279,9 @@ export function Registro() {
         <Campo etiqueta="Correo" htmlFor="correo" error={errores.correo}>
           <Entrada id="correo" type="email" autoComplete="email" value={f.correo} onChange={(e) => set('correo')(e.target.value)} invalido={!!errores.correo} />
         </Campo>
+        {/* CAP-100: celular y permiso después del correo y antes de la contraseña (ficha de diseño CAP-98) */}
+        <CampoCelular valor={f.celular} onCambio={set('celular')} comparte={comparteCelular}
+          onComparte={setComparteCelular} error={errores.celular} />
         <Campo etiqueta="Contraseña" htmlFor="password" error={errores.password}>
           <CampoClave id="password" valor={f.password} onChange={set('password')} autoComplete="new-password" invalido={!!errores.password} />
           <ul className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-[13px]">
@@ -293,7 +305,8 @@ export function Registro() {
 
       <Dialogo abierto={politica} onCerrar={() => setPolitica(false)} titulo="Política de privacidad" pie={<Boton variante="primario" onClick={() => { setAcepta(true); setPolitica(false) }}>Acepto</Boton>}>
         <div className="space-y-3 text-sm leading-relaxed text-tinta-2">
-          <p>CAPACITRON recoge solo los datos necesarios para gestionar tu participación: nombres, apellidos, correo, inscripciones, pagos, asistencia y certificados.</p>
+          <p>CAPACITRON recoge solo los datos necesarios para gestionar tu participación: nombres, apellidos, correo, celular, inscripciones, pagos, asistencia y certificados.</p>
+          <p>Tu celular solo lo ven los organizadores de los eventos en los que te inscribas, y solo si marcas «Compartir mi celular». Nunca se publica y puedes retirar el permiso desde tu perfil.</p>
           <p>Tu contraseña se guarda cifrada. No almacenamos números de tarjeta ni credenciales de pago: los gestiona la plataforma de pago.</p>
           <p>La verificación pública de un certificado muestra únicamente tu nombre, el evento y sus fechas. Los datos de ponentes se publican con su consentimiento.</p>
           <p>Puedes actualizar tus datos desde tu perfil y desactivar los recordatorios cuando quieras.</p>
