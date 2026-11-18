@@ -196,7 +196,9 @@ describe('HU-05 Control de cupos', () => {
   it('regla: si el organizador amplía el cupo se notifica a quienes esperan', async () => {
     const { e } = await lleno(1)
     await bd.rpc('unirse_lista_espera', { token: await bd.cuenta('ana@test.pe'), evento_id: e.id })
-    await bd.rpc('guardar_evento', { ...e, token: org, id: e.id, cupo_maximo: 2 })
+    // Datos del organizador (evento_gestion), como el editor real (D-01, hallado en CAP-79; ajuste de CAP-78).
+    const g = await bd.rpc('evento_gestion', { token: org, id: e.id })
+    await bd.rpc('guardar_evento', { ...g, token: org, id: e.id, cupo_maximo: 2 })
     expect((await bd.correos('ana@test.pe')).at(-1)!.asunto).toMatch(/Se liberó un cupo/)
   })
 })
