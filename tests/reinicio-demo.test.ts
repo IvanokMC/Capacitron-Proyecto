@@ -3,7 +3,8 @@ import { readFileSync } from 'node:fs'
 import { nuevaBd } from './bd'
 it('reiniciar_demo.sql deja la demo como recién sembrada', async () => {
   const bd = await nuevaBd({ demo: true })
-  await bd.rpc('registrar_usuario', { nombres: 'X', apellidos: 'Y', correo: 'x@y.pe', password: 'Clave2026x', acepta_privacidad: true })
+  // CAP-99 (Carlos): el celular es obligatorio en los registros nuevos (HU-18 CA-01).
+  await bd.rpc('registrar_usuario', { nombres: 'X', apellidos: 'Y', correo: 'x@y.pe', password: 'Clave2026x', acepta_privacidad: true, celular: '984123456' })
   await bd.db.exec(readFileSync(new URL('../supabase/reiniciar_demo.sql', import.meta.url), 'utf8'))
   const [{ n }] = await bd.sql(`select count(*)::int n from capa.usuarios`)
   expect(n).toBe(21)
