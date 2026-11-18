@@ -91,11 +91,13 @@ export function ImagenLugar({ src, alt }: { src?: string | null; alt?: string | 
  */
 export function CampoImagen({
   etiqueta, ayuda, vista, vistaPrevia = false, onElegir, onQuitar, error, cargando = false,
-  alt, onAlt, altEjemplo, proporcion = 'cabecera',
+  alt = '', onAlt, altEjemplo = '', proporcion = 'cabecera', conDescripcion = true,
 }: {
   etiqueta: string; ayuda: string; vista?: string | null; vistaPrevia?: boolean
   onElegir: (archivo: File) => void; onQuitar?: () => void; error?: string | null; cargando?: boolean
-  alt: string; onAlt: (v: string) => void; altEjemplo: string; proporcion?: 'cabecera' | 'lugar'
+  alt?: string; onAlt?: (v: string) => void; altEjemplo?: string; proporcion?: 'cabecera' | 'lugar'
+  /** CAP-88: una imagen privada (el comprobante de pago) no necesita descripción pública. */
+  conDescripcion?: boolean
 }) {
   const id = useId()
   return (
@@ -134,10 +136,10 @@ export function CampoImagen({
             {error ?? `${ayuda} ${TEXTOS_IMAGEN.formatos}`}
           </p>
           {vistaPrevia && !error && <p className="text-[13px] font-medium text-qolle-tinta">{TEXTOS_IMAGEN.vistaPrevia}</p>}
-          {vista && (
+          {vista && conDescripcion && (
             <div className="space-y-1">
               <label htmlFor={`${id}-alt`} className="text-[13px] font-medium text-tinta-2">{TEXTOS_IMAGEN.alt}</label>
-              <Entrada id={`${id}-alt`} value={alt} onChange={(e) => onAlt(e.target.value)} placeholder={altEjemplo} maxLength={200} />
+              <Entrada id={`${id}-alt`} value={alt} onChange={(e) => onAlt?.(e.target.value)} placeholder={altEjemplo} maxLength={200} />
             </div>
           )}
         </div>
