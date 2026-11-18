@@ -10,8 +10,11 @@
 // · Evitar sobreingeniería (diap. 135–139): el contrato solo tiene lo que hoy se usa (subir y leer).
 //   Borrar se agregará cuando una historia lo necesite.
 
-/** Buckets conocidos. HU-16 (comprobantes) y HU-20 (flyers) agregarán los suyos aquí. */
-export type Bucket = 'fotos'
+/**
+ * Buckets conocidos. CAP-112 suma «eventos» (flyer e imagen del lugar, HU-20). HU-16 agregará los comprobantes.
+ * OCP (diap. 50–63): un bucket nuevo es una entrada aquí y en REGLAS; las implementaciones no cambian.
+ */
+export type Bucket = 'fotos' | 'eventos'
 
 export interface Almacenamiento {
   readonly modo: 'local' | 'supabase'
@@ -51,6 +54,13 @@ export const REGLAS: Record<Bucket, ReglasArchivo> = {
     nombre: 'La foto',
     formatos: 'JPG, PNG o WEBP',
   },
+  // CAP-112 (HU-20 CA-01 y CA-04): flyer e imagen del lugar, hasta 3 MB. Coinciden con el bucket «eventos» en Supabase.
+  eventos: {
+    tipos: { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' },
+    maxBytes: 3 * 1024 * 1024,
+    nombre: 'La imagen',
+    formatos: 'JPG, PNG o WEBP',
+  },
 }
 
 const MB = 1024 * 1024
@@ -69,21 +79,24 @@ export function validarArchivo(archivo: Pick<Blob, 'type' | 'size'>, reglas: Reg
 }
 
 /**
- * Ruta nueva dentro de la carpeta de la persona: `<usuarioId>/<aleatorio>.<ext>`.
+ * Ruta nueva dentro de una carpeta: `<carpeta>/<aleatorio>.<ext>`. La carpeta es el id del dueño:
+ * la persona en «fotos» (capa.foto_valida, CAP-94) y el evento en «eventos» (capa.ruta_imagen_evento_valida, CAP-109).
  * Cada subida usa un nombre distinto, así nunca se pisa un archivo y la caché del navegador no muestra uno viejo.
- * Cumple el formato que acepta capa.foto_valida (CAP-94).
  */
-export function rutaNueva(usuarioId: string, tipo: string, reglas: ReglasArchivo): string {
+export function rutaNueva(carpeta: string, tipo: string, reglas: ReglasArchivo): string {
   const ext = reglas.tipos[tipo]
   if (!ext) throw new ErrorAlmacenamiento(`${reglas.nombre} debe ser una imagen ${reglas.formatos}.`, 'ARCHIVO')
   const aleatorio = globalThis.crypto.randomUUID().replace(/-/g, '').slice(0, 16)
-  return `${usuarioId}/${Date.now().toString(36)}-${aleatorio}.${ext}`
+  return `${carpeta}/${Date.now().toString(36)}-${aleatorio}.${ext}`
 }
 
-/** Valida, arma la ruta y sube. Es lo único que deben llamar las pantallas. Devuelve la ruta para guardarla en la base. */
-export async function subirArchivo(alm: Almacenamiento, bucket: Bucket, usuarioId: string, archivo: Blob): Promise<string> {
+/**
+ * Valida, arma la ruta y sube. Es lo único que deben llamar las pantallas. Devuelve la ruta para guardarla en la base.
+ * `carpeta`: el id de la persona (fotos) o del evento (eventos).
+ */
+export async function subirArchivo(alm: Almacenamiento, bucket: Bucket, carpeta: string, archivo: Blob): Promise<string> {
   const reglas = REGLAS[bucket]
   const motivo = validarArchivo(archivo, reglas)
   if (motivo) throw new ErrorAlmacenamiento(motivo, 'ARCHIVO')
-  return alm.subir(bucket, rutaNueva(usuarioId, archivo.type, reglas), archivo)
+  return alm.subir(bucket, rutaNueva(carpeta, archivo.type, reglas), archivo)
 }
