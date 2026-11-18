@@ -46,6 +46,11 @@ export interface Evento {
   /** CAP-104: punto del lugar; null en eventos virtuales o publicados antes de la HU-19. */
   latitud: number | null
   longitud: number | null
+  /** CAP-109: rutas del flyer y de la imagen del lugar en el bucket de imágenes de eventos, con su texto alternativo. */
+  flyer_url: string | null
+  flyer_alt: string | null
+  imagen_lugar_url: string | null
+  imagen_lugar_alt: string | null
   cupo_maximo: number
   cupos_ocupados: number
   cupos_disponibles: number

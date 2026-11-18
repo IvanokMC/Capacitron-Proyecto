@@ -17,6 +17,8 @@ import busquedaCatalogo from '../../../supabase/migrations/20261118000001_busque
 import celularUsuario from '../../../supabase/migrations/20261119000001_celular_usuario.sql?raw'
 // CAP-104 (Carlos): latitud y longitud del evento
 import coordenadasEvento from '../../../supabase/migrations/20261120000001_coordenadas_evento.sql?raw'
+// CAP-109 (Carlos): flyer e imagen del lugar del evento
+import imagenesEvento from '../../../supabase/migrations/20261121000001_imagenes_evento.sql?raw'
 
 interface Ejecutor {
   exec(sql: string): Promise<unknown>
@@ -46,7 +48,7 @@ exception when others then
 end $$;
 `
 
-const SQL = [esquema, funcionesBase, funcionesOperacion, demo, endurecimiento, camposEvento, validacionesEvento, fotoUsuario, camposPublicos, busquedaCatalogo, celularUsuario, coordenadasEvento, RPC_LOCAL]
+const SQL = [esquema, funcionesBase, funcionesOperacion, demo, endurecimiento, camposEvento, validacionesEvento, fotoUsuario, camposPublicos, busquedaCatalogo, celularUsuario, coordenadasEvento, imagenesEvento, RPC_LOCAL]
 
 /** Huella del SQL: si cambia una migración, la base local se recrea. */
 export const VERSION_SQL = (() => {
